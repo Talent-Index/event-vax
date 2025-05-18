@@ -161,8 +161,16 @@ Eventverse is a revolutionary blockchain-based ticketing platform engineered to 
 
 
 
-   ## 🎬 Project Demo — *See It in Action!*
-🔗 [Click here to watch the project video](https://www.youtube.com/watch?v=YOUR_VIDEO_ID)
+## 🎥 Project Video Demo
+
+<p align="center">
+  <a href="https://drive.google.com/file/d/1Z5Q1POLNw9g6Vq8ph7jJq1FduJROfza0/view?usp=sharing" target="_blank">
+    <img src="https://img.icons8.com/clouds/500/video-playlist.png" alt="Watch Project Video" width="60%" />
+  </a>
+</p>
+
+📽️ **Click the image above to watch the full project demo hosted on Google Drive.**
+
 
 
 
