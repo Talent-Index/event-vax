@@ -157,6 +157,39 @@ Eventverse is a revolutionary blockchain-based ticketing platform engineered to 
 5. **Go Live!**
 
    - Promote the page across social media and mailing lists.
+   - 
+
+
+
+   ## 🎬 Project Demo — *See It in Action!*
+
+> *"A picture is worth a thousand words, but a video? That's a whole movie."*
+
+[![Click to Watch the Demo](https://img.youtube.com/vi/YOUR_VIDEO_ID/hqdefault.jpg)](## 🎬 Project Demo — *See It in Action!*
+
+> *"A picture is worth a thousand words, but a video? That's a whole movie."*
+
+[![Click to Watch the Demo](https://drive.google.com/file/d/1Z5Q1POLNw9g6Vq8ph7jJq1FduJROfza0/view?usp=sharing)
+
+🎥 **Watch our project in action on YouTube!**  
+From zero to wow in just a few minutes.  
+Grab your popcorn 🍿 and hit play!
+
+---
+
+✨ **Pro tip:** Want to try it yourself?  
+Check out the [Getting Started](#getting-started) section below ⬇️
+
+
+🎥 **Watch our project in action on YouTube!**  
+From zero to wow in just a few minutes.  
+Grab your popcorn 🍿 and hit play!
+
+---
+
+✨ **Pro tip:** Want to try it yourself?  
+Check out the [Getting Started](#getting-started) section below ⬇️
+
 
 ## ⛰️ Avalanche Integration
 
