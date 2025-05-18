@@ -68,7 +68,7 @@ Eventverse is a revolutionary blockchain-based ticketing platform engineered to 
    sudo apt update
    sudo apt install nodejs npm
    
-   # For macOS with Homebrew
+   # For macOS wicth Homebrew
    brew install node
    ```
    Verify installation with: `node --version` and `npm --version`
@@ -125,8 +125,7 @@ Eventverse is a revolutionary blockchain-based ticketing platform engineered to 
 | Williams Ochieng     | Smart Contract Dev | [williams@example.com](mailto\:williams@example.com)             |
 | Joseph Okumu Otieno  | Full-stack Engineer| [jokumu25@gmail.com](mailto\:jokumu25@gmail.com)       |
 | John Mokaya          | Frontend Developer | [mokayaj857@gmail.com](mailto\:mokayaj857@gmail.com)         |
-| Stanley Kariuki      | Smart Contract Dev | [stanleykariuki@example.com](mailto\:stanleykariuki@example.com) |
-| Phelix               | Backend Developer  | [phelix@example.com](mailto\:phelix@example.com)                 |
+| Stanley Kariuki      | Smart Contract Dev | [stanleykariuki@example.com](                 mailto\:stanleykariuki@example.com) |
 
 ## 📈 Project Milestones
 
