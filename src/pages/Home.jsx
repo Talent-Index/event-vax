@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Moon, Ticket, Calendar, Users, TrendingUp, ChevronRight, Star, Zap, Activity, Globe, Power } from 'lucide-react';
-import bitcoinImage from "../assets/tig.png"; 
+import bitcoinImage from "../assets/EventVerse Tickets.jpg"; 
 import Chatbit from './Chatbit';
 import Testimonials from './Testimonials';
 import Discover from './Discover';
@@ -90,6 +90,8 @@ const UltimateEventPlatform = () => {
   const [activeStat, setActiveStat] = useState(null);
   const [walletAddress, setWalletAddress] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
@@ -132,7 +134,7 @@ const UltimateEventPlatform = () => {
     {
       icon: <Activity className="w-8 h-8" />,
       title: "Your Tickets, Your Security",
-      description: "Safeguard Your Tickets with Avalanche’s Trusted Blockchain Technology",
+      description: "Safeguard Your Tickets with Avalanche's Trusted Blockchain Technology",
       color: "from-purple-600 to-pink-600"
     }
   ];
@@ -142,7 +144,12 @@ const UltimateEventPlatform = () => {
       try {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         if (accounts.length > 0) {
-          setWalletAddress(accounts[0]);
+          // Check if user was previously authenticated
+          const storedAuth = localStorage.getItem(`authenticated_${accounts[0]}`);
+          if (storedAuth) {
+            setWalletAddress(accounts[0]);
+            setIsAuthenticated(true);
+          }
         }
       } catch (error) {
         console.error("Error checking wallet connection:", error);
@@ -152,14 +159,39 @@ const UltimateEventPlatform = () => {
 
   const handleAccountsChanged = (accounts) => {
     if (accounts.length > 0) {
-      setWalletAddress(accounts[0]);
+      // Reset authentication when account changes
+      setWalletAddress(null);
+      setIsAuthenticated(false);
+      const storedAuth = localStorage.getItem(`authenticated_${accounts[0]}`);
+      if (storedAuth) {
+        setWalletAddress(accounts[0]);
+        setIsAuthenticated(true);
+      }
     } else {
       setWalletAddress(null);
+      setIsAuthenticated(false);
     }
   };
 
   const handleDisconnect = () => {
+    if (walletAddress) {
+      localStorage.removeItem(`authenticated_${walletAddress}`);
+    }
     setWalletAddress(null);
+    setIsAuthenticated(false);
+  };
+
+  const generateSignMessage = (address) => {
+    const timestamp = Date.now();
+    return `Welcome to EventVerse!
+
+Please sign this message to authenticate your wallet.
+
+Wallet: ${address}
+Timestamp: ${timestamp}
+Nonce: ${Math.random().toString(36).substring(2, 15)}
+
+This request will not trigger a blockchain transaction or cost any gas fees.`;
   };
 
   const connectWallet = async () => {
@@ -170,26 +202,88 @@ const UltimateEventPlatform = () => {
 
     setIsConnecting(true);
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      // Step 1: Request account access
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
       });
       
-      if (accounts.length > 0) {
-        const signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        setWalletAddress(address);
-        console.log("Connected Address:", address);
+      if (accounts.length === 0) {
+        throw new Error("No accounts found");
       }
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const address = await signer.getAddress();
+
+      // Step 2: Check if we're on the correct network
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      if (chainId !== AVALANCHE_MAINNET_PARAMS.chainId) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: AVALANCHE_MAINNET_PARAMS.chainId }],
+          });
+        } catch (switchError) {
+          if (switchError.code === 4902) {
+            // Network not added, add it
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [AVALANCHE_MAINNET_PARAMS]
+            });
+          } else {
+            throw switchError;
+          }
+        }
+      }
+
+      // Step 3: Request signature for authentication
+      const message = generateSignMessage(address);
+      
+      try {
+        const signature = await signer.signMessage(message);
+        console.log("Signature successful:", signature);
+        
+        // Store authentication status
+        localStorage.setItem(`authenticated_${address}`, JSON.stringify({
+          timestamp: Date.now(),
+          signature: signature
+        }));
+        
+        setWalletAddress(address);
+        setIsAuthenticated(true);
+        setShowSignInPrompt(false);
+        console.log("Connected and authenticated:", address);
+        
+      } catch (signError) {
+        if (signError.code === 4001) {
+          throw new Error("Signature rejected by user");
+        } else {
+          throw new Error("Failed to sign message: " + signError.message);
+        }
+      }
+      
     } catch (error) {
       console.error("Error connecting to wallet:", error);
+      alert(error.message || "Failed to connect wallet");
     } finally {
       setIsConnecting(false);
     }
   };
 
   const disconnectWallet = () => {
+    if (walletAddress) {
+      localStorage.removeItem(`authenticated_${walletAddress}`);
+    }
     setWalletAddress(null);
+    setIsAuthenticated(false);
+  };
+
+  const handleProtectedNavigation = (path) => {
+    if (!isAuthenticated) {
+      setShowSignInPrompt(true);
+      return;
+    }
+    window.location.href = path;
   };
 
   return (
@@ -205,6 +299,40 @@ const UltimateEventPlatform = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-full blur-3xl" />
       </div>
+
+      {/* Sign In Prompt Modal */}
+      {showSignInPrompt && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-800/95 backdrop-blur-xl rounded-2xl border border-purple-500/30 max-w-md w-full mx-4 overflow-hidden">
+            <div className="relative bg-gradient-to-r from-purple-600/20 to-blue-600/20 p-6 text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Power className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">Sign In Required</h3>
+              <p className="text-gray-300">Please sign in with your wallet to access this feature.</p>
+            </div>
+
+            <div className="p-6">
+              <div className="space-y-3">
+                <button
+                  onClick={connectWallet}
+                  disabled={isConnecting}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white py-3 px-6 rounded-xl transition-colors duration-300 flex items-center justify-center space-x-2"
+                >
+                  <Power className="w-5 h-5" />
+                  <span>{isConnecting ? 'Signing In...' : 'Sign In with Wallet'}</span>
+                </button>
+                <button
+                  onClick={() => setShowSignInPrompt(false)}
+                  className="w-full bg-gray-600 hover:bg-gray-500 text-white py-3 px-6 rounded-xl transition-colors duration-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <main className="relative pt-32 pb-20 px-6">
@@ -232,26 +360,28 @@ const UltimateEventPlatform = () => {
             </p>
 
             <div className="flex space-x-6">
-              <a href="/ticketsell">
-                <button className="group relative px-8 py-4 rounded-xl overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 blur-xl 
-                    group-hover:blur-2xl transition-all duration-300" />
-                  <div className="relative z-10 flex items-center space-x-2">
-                    <span>Explore Events</span>
-                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </button>
-              </a>
+              <button 
+                onClick={() => handleProtectedNavigation('/ticketsell')}
+                className="group relative px-8 py-4 rounded-xl overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600" />
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 blur-xl 
+                  group-hover:blur-2xl transition-all duration-300" />
+                <div className="relative z-10 flex items-center space-x-2">
+                  <span>Explore Events</span>
+                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </button>
 
-              <a href="/ticket">
-                <button className="group relative px-8 py-4 rounded-xl overflow-hidden">
-                  <div className="absolute inset-0 border border-purple-500 rounded-xl" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 
-                    transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
-                  <span className="relative z-10">Tickets Collection</span>
-                </button>
-              </a>
+              <button 
+                onClick={() => handleProtectedNavigation('/ticket')}
+                className="group relative px-8 py-4 rounded-xl overflow-hidden"
+              >
+                <div className="absolute inset-0 border border-purple-500 rounded-xl" />
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 
+                  transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
+                <span className="relative z-10">Tickets Collection</span>
+              </button>
             </div>
           </div>
 
@@ -312,7 +442,7 @@ const UltimateEventPlatform = () => {
       {/* Interactive Stats with Hover Effects */}
       <section className="py-20 px-6 relative">
       <div className="max-w-7xl mx-auto grid grid-cols-4 gap-8">
-          {[
+          {[ 
             { value: "100K+", label: "Active Users", icon: <Users />, color: "purple" },
             { value: "50K+", label: "Events Hosted", icon: <Calendar />, color: "blue" },
             { value: "1M+", label: "Tickets Sold", icon: <Ticket />, color: "purple" },

@@ -67,83 +67,19 @@ const TokenizedTicketing = () => {
           <p className="text-xl text-gray-400">Secure, transparent, and efficient event ticketing powered by blockchain</p>
         </div>
 
-        <div className="max-w-7xl mx-auto grid grid-cols-3 gap-8 mb-20">
-          {[
-            {
-              icon: <Shield />,
-              title: "Secure Tokenization",
-              description: "Event tickets are minted as unique tokens on Avalanche blockchain"
-            },
-            {
-              icon: <RefreshCw />,
-              title: "Instant Transfers",
-              description: "Fast and secure transactions with Avalanche C-Chain"
-            },
-            {
-              icon: <BarChart />,
-              title: "Market Analytics",
-              description: "Real-time tracking of ticket sales and transfers"
-            }
-          ].map((feature, index) => (
-            <div 
-              key={index}
-              className="group relative transform hover:scale-105 transition-all duration-300"
-              onMouseEnter={() => setHoveredCard(index)}
-              onMouseLeave={() => setHoveredCard(null)}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-xl 
-                blur-xl opacity-0 group-hover:opacity-100 transition-all duration-300" />
-              <div className="relative bg-black/40 backdrop-blur-xl rounded-xl border border-purple-500/30 
-                p-8 group-hover:border-purple-500/50 transition-all duration-300">
-                <div className="w-16 h-16 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 
-                  flex items-center justify-center mb-6 transform group-hover:rotate-12 transition-all duration-500">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-semibold mb-4">{feature.title}</h3>
-                <p className="text-gray-400 group-hover:text-gray-300 transition-colors">
-                  {feature.description}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-
         {/* Token Actions */}
         <div className="max-w-7xl mx-auto">
           <div className="flex space-x-4 mb-8">
-       <a href="/qrcode" className="inline-block">
-      <button className="relative px-6 py-3 rounded-xl overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600" />
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <span className="relative text-white font-medium">
-          Buy Tickets
-        </span>
-        <div className="absolute inset-0 shadow-lg shadow-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      </button>
-      </a>
-
-      <a href="/buy" className="inline-block">
-      <button className="relative px-6 py-3 rounded-xl overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600" />
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <span className="relative text-white font-medium">
-          Create Event
-        </span>
-        <div className="absolute inset-0 shadow-lg shadow-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      </button>
-      </a>
-
-          
-          <a href="/resell" className="inline-block">
-      <button className="relative px-6 py-3 rounded-xl overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600" />
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <span className="relative text-white font-medium">
-          Resell
-        </span>
-        <div className="absolute inset-0 shadow-lg shadow-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      </button>
-      </a>
+            <a href="/create" className="inline-block">
+              <button className="relative px-6 py-3 rounded-xl overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600" />
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <span className="relative text-white font-medium">
+                  Create Event
+                </span>
+                <div className="absolute inset-0 shadow-lg shadow-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </button>
+            </a>
           </div>
 
           {/* Event Cards */}
@@ -172,7 +108,7 @@ const TokenizedTicketing = () => {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold text-purple-400">{event.price}</span>
-                      <a href='/qrcode'>
+                      <a href='/mint'>
                       <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 
                         rounded-lg flex items-center space-x-2 group-hover:shadow-lg 
                         group-hover:shadow-purple-500/20 transition-all">
