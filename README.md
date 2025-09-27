@@ -1,4 +1,4 @@
-# 🎟️ Eventverse
+# 🎟️ Eventverse.
 
 ## 🌍 Overview
 
