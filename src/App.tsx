@@ -14,6 +14,7 @@ import Qrcode from "./pages/Qrcode";
 import ConnectWalletButton from "./components/ConnectWallet";
 import CreateEvent from "./pages/CreateEvent";
 import Ticket from "./pages/Ticket";
+import MyEvent from "./pages/Myevent";
 import Teams from "./pages/Teams";
 import MintNFT from "./pages/MintNFT";
 import WaitlistPage from "./pages/WaitingList";
@@ -59,6 +60,7 @@ const App = () => {
         <Route path="/mint" element={<MintNFT />} />
         <Route path="/waiting" element={<WaitlistPage />} />
         <Route path="/resell" element={<QuantumTicketResale />} />
+        <Route path="/Myevent" element={<MyEvent />} />
       </Routes>
 
       {/* Footer Component - Displayed on all pages */}

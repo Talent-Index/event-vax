@@ -70,7 +70,7 @@ const TokenizedTicketing = () => {
         {/* Token Actions */}
         <div className="max-w-7xl mx-auto">
           <div className="flex space-x-4 mb-8">
-            <a href="/create" className="inline-block">
+            <a href="/Myevent" className="inline-block">
               <button className="relative px-6 py-3 rounded-xl overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600" />
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
