@@ -50,7 +50,7 @@ const ParticleField = () => {
             height: `${Math.random() * 4 + 1}px`,
             top: `${Math.random() * 100}%`,
             left: `${Math.random() * 100}%`,
-            background: `rgba(${Math.random() * 255}, ${Math.random() * 100 + 155}, 255, 0.6)`,
+            background: `rgba(147, 51, 234, 0.6)`, // Solid purple
             animationDuration: `${Math.random() * 10 + 10}s`,
             animationDelay: `-${Math.random() * 10}s`,
           }}
@@ -73,9 +73,9 @@ const AnimatedCard = ({ children, delay, onClick, isSelected }) => {
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-xl blur-xl 
+      <div className="absolute inset-0 bg-purple-600/20 rounded-xl blur-xl
         group-hover:blur-2xl transition-all duration-300" />
-      <div className="relative bg-black/40 backdrop-blur-xl rounded-xl border border-purple-500/30 
+      <div className="relative bg-black/40 backdrop-blur-xl rounded-xl border border-purple-500/30
         group-hover:border-purple-500/50 p-6 transition-all duration-300">
         {children}
       </div>
@@ -123,19 +123,19 @@ const UltimateEventPlatform = () => {
       icon: <Ticket className="w-8 h-8" />,
       title: "Quantum Ticketing",
       description: "Next-gen blockchain verification with quantum security In less than 2 seconds only on Avalance ",
-      color: "from-purple-600 to-blue-600"
+      color: "purple-600"
     },
     {
       icon: <Globe className="w-8 h-8" />,
       title: "Maximizing Saving on Events",
       description: "Leveraging Avalanche's Low Fees for More Affordable Event Ticketing",
-      color: "from-blue-600 to-purple-600"
+      color: "purple-600"
     },
     {
       icon: <Activity className="w-8 h-8" />,
       title: "Your Tickets, Your Security",
       description: "Safeguard Your Tickets with Avalanche's Trusted Blockchain Technology",
-      color: "from-purple-600 to-pink-600"
+      color: "purple-600"
     }
   ];
 
@@ -297,15 +297,15 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
           transform: `translate(${mousePosition.x - 128}px, ${mousePosition.y - 128}px)`,
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-purple-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Sign In Prompt Modal */}
       {showSignInPrompt && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-gray-800/95 backdrop-blur-xl rounded-2xl border border-purple-500/30 max-w-md w-full mx-4 overflow-hidden">
-            <div className="relative bg-gradient-to-r from-purple-600/20 to-blue-600/20 p-6 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="relative bg-purple-600/20 p-6 text-center">
+              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Power className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">Sign In Required</h3>
@@ -317,7 +317,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                 <button
                   onClick={connectWallet}
                   disabled={isConnecting}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white py-3 px-6 rounded-xl transition-colors duration-300 flex items-center justify-center space-x-2"
+                  className="w-full bg-purple-600 hover:bg-purple-500 text-white py-3 px-6 rounded-xl transition-colors duration-300 flex items-center justify-center space-x-2"
                 >
                   <Power className="w-5 h-5" />
                   <span>{isConnecting ? 'Signing In...' : 'Sign In with Wallet'}</span>
@@ -347,8 +347,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                 <span className="inline-block animate-slide-up-fade delay-200">The Future of</span>
               </div>
               <div className="overflow-hidden">
-                <span className="inline-block bg-gradient-to-r from-purple-400 to-blue-400 
-                  bg-clip-text text-transparent animate-slide-up-fade delay-400">
+                <span className="inline-block text-purple-400 animate-slide-up-fade delay-400">
                   Event Ticketing
                 </span>
               </div>
@@ -364,8 +363,8 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                 onClick={() => handleProtectedNavigation('/ticketsell')}
                 className="group relative px-8 py-4 rounded-xl overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600" />
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 blur-xl 
+                <div className="absolute inset-0 bg-purple-600" />
+                <div className="absolute inset-0 bg-purple-600 blur-xl
                   group-hover:blur-2xl transition-all duration-300" />
                 <div className="relative z-10 flex items-center space-x-2">
                   <span>Explore Events</span>
@@ -378,7 +377,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                 className="group relative px-8 py-4 rounded-xl overflow-hidden"
               >
                 <div className="absolute inset-0 border border-purple-500 rounded-xl" />
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 
+                <div className="absolute inset-0 bg-purple-500/10
                   transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
                 <span className="relative z-10">Tickets Collection</span>
               </button>
@@ -391,7 +390,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-3xl 
+                  className="absolute inset-0 bg-purple-500 rounded-3xl
                     opacity-20 blur-3xl group-hover:blur-2xl transition-all duration-500"
                   style={{
                     transform: `rotate(${i * 30}deg)`,
@@ -422,12 +421,11 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               onClick={() => setSelectedFeature(index)}
             >
               <div className={`relative group-hover:scale-105 transition-transform duration-300`}>
-                <div className={`w-16 h-16 mb-6 rounded-xl bg-gradient-to-r ${feature.color} 
+                <div className={`w-16 h-16 mb-6 rounded-xl bg-${feature.color}
                   flex items-center justify-center transform group-hover:rotate-12 transition-all duration-500`}>
                   {feature.icon}
                 </div>
-                <h3 className="text-xl font-semibold mb-4 bg-gradient-to-r from-white to-gray-300 
-                  bg-clip-text text-transparent">{feature.title}</h3>
+                <h3 className="text-xl font-semibold mb-4 text-white">{feature.title}</h3>
                 <p className="text-gray-400 group-hover:text-gray-300 transition-colors">
                   {feature.description}
                 </p>
@@ -454,7 +452,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               onMouseEnter={() => setActiveStat(index)}
               onMouseLeave={() => setActiveStat(null)}
             >
-              <div className={`absolute inset-0 bg-gradient-to-r from-${stat.color}-500/20 to-${stat.color}-600/20 
+              <div className={`absolute inset-0 bg-${stat.color}-500/20
                 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300`} />
               <div className="relative bg-black/40 backdrop-blur-xl rounded-xl border border-purple-500/30 
                 group-hover:border-purple-500/50 p-6 transform group-hover:translate-y-[-8px] 
@@ -465,8 +463,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                     group-hover:rotate-12 transition-all duration-500`}>
                     {stat.icon}
                   </div>
-                  <div className={`text-4xl font-bold bg-gradient-to-r from-${stat.color}-400 
-                    to-${stat.color}-600 bg-clip-text text-transparent mb-2`}>
+                  <div className={`text-4xl font-bold text-${stat.color}-400 mb-2`}>
                     {stat.value}
                   </div>
                   <div className="text-gray-400 group-hover:text-gray-300 transition-colors">
