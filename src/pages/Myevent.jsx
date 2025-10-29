@@ -16,6 +16,7 @@ const QuantumEventCreator = () => {
     eventFlyer: null
   });
   const [focusedField, setFocusedField] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     setTimeout(() => setIsLoading(false), 1500);
@@ -47,10 +48,53 @@ const QuantumEventCreator = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Event Created:', formData);
-    // Handle event creation logic here
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Import the event service
+      const { default: eventService } = await import('../services/eventService.js');
+      
+      // Prepare event data
+      const eventData = {
+        eventName: formData.eventName,
+        eventDate: formData.eventDate,
+        venue: formData.venue,
+        description: formData.description,
+        regularPrice: formData.regularPrice,
+        vipPrice: formData.vipPrice,
+        vvipPrice: formData.vvipPrice,
+        walletAddress: 'anonymous' // You can integrate wallet connection later
+      };
+
+      // Create event with flyer
+      const createdEvent = await eventService.createEvent(eventData, formData.eventFlyer);
+      
+      console.log('Event Created Successfully:', createdEvent);
+      
+      // Reset form
+      setFormData({
+        eventName: '',
+        eventDate: '',
+        venue: '',
+        regularPrice: '',
+        vipPrice: '',
+        vvipPrice: '',
+        description: '',
+        eventFlyer: null
+      });
+
+      // Show success message (you can add a toast notification here)
+      alert('Event created successfully! You can now view it in the ticket marketplace.');
+      
+    } catch (error) {
+      console.error('Error creating event:', error);
+      setError(error.message || 'Failed to create event. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const FloatingParticle = ({ delay = 0 }) => (
@@ -233,7 +277,7 @@ const QuantumEventCreator = () => {
                   Event Date *
                 </label>
                 <input
-                  type="datetime-local"
+                  type="date"
                   name="eventDate"
                   value={formData.eventDate}
                   onChange={handleInputChange}
@@ -387,19 +431,36 @@ const QuantumEventCreator = () => {
             </div>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
+              <p className="text-red-400 text-center">{error}</p>
+            </div>
+          )}
+
           {/* Submit Button */}
           <div className="flex justify-center">
             <button
               type="submit"
-              className="group relative px-12 py-4 rounded-xl overflow-hidden transition-all duration-300 hover:scale-105"
+              disabled={isLoading}
+              className="group relative px-12 py-4 rounded-xl overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 animate-gradient-x" />
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                    style={{ background: 'linear-gradient(45deg, rgba(168,85,247,0.4) 0%, rgba(147,51,234,0.4) 100%)' }} />
               <div className="relative z-10 flex items-center space-x-3">
-                <Plus className="w-5 h-5" />
-                <span className="font-bold text-lg">Create Event</span>
-                <Sparkles className="w-5 h-5 animate-pulse" />
+                {isLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span className="font-bold text-lg">Creating Event...</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5" />
+                    <span className="font-bold text-lg">Create Event</span>
+                    <Sparkles className="w-5 h-5 animate-pulse" />
+                  </>
+                )}
               </div>
             </button>
           </div>
