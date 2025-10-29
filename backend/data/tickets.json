@@ -1,0 +1,13 @@
+[
+  {
+    "id": "b184e02c-f059-429a-82d9-773e82b8da70",
+    "eventId": "9e577221-5527-419d-bc8c-384abd884e70",
+    "tokenId": "TICKET-1761736306217",
+    "ownerAddress": "0x301b716bc36bbddec87c74b924f042ac2e03ed5c",
+    "seatNumber": "REGULAR-79",
+    "ticketType": "REGULAR",
+    "price": 200,
+    "mintedAt": "2025-10-29T11:11:46.253Z",
+    "status": "active"
+  }
+]
