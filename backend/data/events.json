@@ -1,0 +1,20 @@
+[
+  {
+    "id": "9e577221-5527-419d-bc8c-384abd884e70",
+    "eventName": "Africa Blockchain Festival",
+    "eventDate": "2025-11-07",
+    "venue": "KIgali, Rwanda",
+    "description": "A blockchain event that brings blockchain developers from various african countries",
+    "flyerUrl": "/uploads/flyer-1761736227450-587414586.png",
+    "pricing": {
+      "regular": 200,
+      "vip": 300,
+      "vvip": 500
+    },
+    "maxTickets": 500,
+    "availableTickets": 499,
+    "status": "active",
+    "createdAt": "2025-10-29T11:10:27.481Z",
+    "createdBy": "anonymous"
+  }
+]
