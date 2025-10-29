@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Calendar, MapPin, Ticket, Sparkles, Wallet, Plus, DollarSign, Users, Clock, Star, Zap } from "lucide-react";
+import { Calendar, MapPin, Ticket, Sparkles, Wallet, Plus, DollarSign, Users, Clock, Star, Zap, Upload, Image } from "lucide-react";
 
 const QuantumEventCreator = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -12,7 +12,8 @@ const QuantumEventCreator = () => {
     regularPrice: '',
     vipPrice: '',
     vvipPrice: '',
-    description: ''
+    description: '',
+    eventFlyer: null
   });
   const [focusedField, setFocusedField] = useState(null);
 
@@ -34,6 +35,16 @@ const QuantumEventCreator = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      setFormData(prev => ({
+        ...prev,
+        eventFlyer: file
+      }));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -273,6 +284,73 @@ const QuantumEventCreator = () => {
                     focusedField === 'description' ? 'border-purple-500' : 'border-gray-700'
                   } rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-all duration-300 resize-none`}
                 />
+              </div>
+
+              {/* Upload Event Flyer */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+                  <Image className="w-4 h-4 mr-2 text-purple-400" />
+                  Upload Event Flyer
+                </label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    id="eventFlyer"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    onFocus={() => setFocusedField('eventFlyer')}
+                    onBlur={() => setFocusedField(null)}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="eventFlyer"
+                    className={`w-full bg-gray-800/50 border ${
+                      focusedField === 'eventFlyer' ? 'border-purple-500' : 'border-gray-700'
+                    } border-2 border-dashed rounded-lg px-6 py-8 text-center cursor-pointer 
+                    hover:border-purple-400 hover:bg-gray-800/70 transition-all duration-300 
+                    flex flex-col items-center justify-center space-y-3 group`}
+                  >
+                    <Upload className={`w-8 h-8 ${
+                      formData.eventFlyer ? 'text-green-400' : 'text-gray-400'
+                    } group-hover:text-purple-400 transition-colors duration-300`} />
+                    <div className="text-center">
+                      <p className={`text-sm font-medium ${
+                        formData.eventFlyer ? 'text-green-400' : 'text-gray-300'
+                      } group-hover:text-white transition-colors duration-300`}>
+                        {formData.eventFlyer ? formData.eventFlyer.name : 'Click to upload event flyer'}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        PNG, JPG, GIF up to 10MB
+                      </p>
+                    </div>
+                  </label>
+                  {focusedField === 'eventFlyer' && (
+                    <div className="absolute inset-0 rounded-lg bg-purple-500/10 -z-10 animate-pulse" />
+                  )}
+                </div>
+                
+                {/* Preview uploaded image */}
+                {formData.eventFlyer && (
+                  <div className="mt-4 relative">
+                    <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-300">Preview:</span>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, eventFlyer: null }))}
+                          className="text-red-400 hover:text-red-300 text-sm transition-colors duration-200"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <img
+                        src={URL.createObjectURL(formData.eventFlyer)}
+                        alt="Event flyer preview"
+                        className="w-full max-w-xs mx-auto rounded-lg shadow-lg"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
