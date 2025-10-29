@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import eventService from '../services/eventService.js';
 import { 
   Sparkles, 
   Wallet, 
@@ -25,21 +26,13 @@ const QuantumMintNFT = () => {
   const [mintedTicketData, setMintedTicketData] = useState(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [currentStep, setCurrentStep] = useState(1);
-  
-  const [eventData] = useState({
-    name: "EventVax Summit 2025 - VIP Ticket",
-    description: "Official VIP access ticket for EventVax Summit 2025. This NFT grants exclusive access to all VIP areas, networking sessions, and premium content.",
-    image: "ipfs://QmPreUploadedEventImage",
-    attributes: [
-      { trait_type: "Event", value: "EventVax Summit 2025" },
-      { trait_type: "Ticket Type", value: "VIP" },
-      { trait_type: "Date", value: "September 14, 2025" },
-      { trait_type: "Venue", value: "Convention Center" }
-    ]
-  });
+  const [eventData, setEventData] = useState(null);
+  const [selectedTicketType, setSelectedTicketType] = useState('regular');
+  const [loadingEvent, setLoadingEvent] = useState(true);
 
   useEffect(() => {
     checkWalletConnection();
+    loadEventData();
     
     const handleScroll = () => {
       setScrollPosition(window.scrollY);
@@ -59,6 +52,46 @@ const QuantumMintNFT = () => {
       }
     };
   }, []);
+
+  const loadEventData = async () => {
+    try {
+      setLoadingEvent(true);
+      
+      // Get event ID from URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const eventId = urlParams.get('eventId');
+      
+      if (!eventId) {
+        throw new Error('No event ID provided');
+      }
+
+      const event = await eventService.getEventById(eventId);
+      
+      // Transform event data for the component
+      const transformedEventData = {
+        id: event.id,
+        name: `${event.eventName} - Ticket`,
+        description: event.description || `Official ticket for ${event.eventName}. This NFT grants access to the event and all associated activities.`,
+        image: event.flyerUrl ? eventService.getFlyerUrl(event.flyerUrl) : "ipfs://QmPreUploadedEventImage",
+        attributes: [
+          { trait_type: "Event", value: event.eventName },
+          { trait_type: "Date", value: new Date(event.eventDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) },
+          { trait_type: "Venue", value: event.venue },
+          { trait_type: "Ticket Type", value: selectedTicketType.toUpperCase() }
+        ],
+        pricing: event.pricing,
+        availableTickets: event.availableTickets,
+        maxTickets: event.maxTickets
+      };
+      
+      setEventData(transformedEventData);
+    } catch (err) {
+      console.error('Error loading event data:', err);
+      setError(err.message || 'Failed to load event data');
+    } finally {
+      setLoadingEvent(false);
+    }
+  };
 
   const handleAccountsChanged = (accounts) => {
     if (accounts.length > 0) {
@@ -112,13 +145,27 @@ const QuantumMintNFT = () => {
       setMintingStatus('Generating ticket metadata...');
       setCurrentStep(3);
 
-      const ticketMetadata = {
+      if (!eventData) {
+        throw new Error('Event data not loaded');
+      }
+
+      // Update event data with selected ticket type
+      const updatedEventData = {
         ...eventData,
         attributes: [
-          ...eventData.attributes,
+          ...eventData.attributes.filter(attr => attr.trait_type !== "Ticket Type"),
+          { trait_type: "Ticket Type", value: selectedTicketType.toUpperCase() }
+        ]
+      };
+
+      const ticketMetadata = {
+        ...updatedEventData,
+        attributes: [
+          ...updatedEventData.attributes,
           { trait_type: "Owner", value: walletAddress },
           { trait_type: "Mint Date", value: new Date().toISOString() },
-          { trait_type: "Ticket ID", value: `TICKET-${Date.now()}` }
+          { trait_type: "Ticket ID", value: `TICKET-${Date.now()}` },
+          { trait_type: "Price", value: `${eventData.pricing[selectedTicketType]} AVAX` }
         ]
       };
 
@@ -197,10 +244,10 @@ const QuantumMintNFT = () => {
         eventDate: eventData.attributes.find(attr => attr.trait_type === "Date")?.value || "March 15, 2025",
         eventTime: "2:00 PM - 10:00 PM",
         venue: eventData.attributes.find(attr => attr.trait_type === "Venue")?.value || "Convention Center",
-        address: "123 Convention Ave, New York, NY 10001",
-        ticketType: eventData.attributes.find(attr => attr.trait_type === "Ticket Type")?.value || "VIP Access",
-        seatNumber: `VIP-${Math.floor(Math.random() * 1000)}`,
-        price: "0.08 AVAX",
+        address: "Event Location Address",
+        ticketType: selectedTicketType.toUpperCase(),
+        seatNumber: `${selectedTicketType.toUpperCase()}-${Math.floor(Math.random() * 1000)}`,
+        price: `${eventData.pricing[selectedTicketType]} AVAX`,
         qrCode: `QR${Math.random().toString(36).substring(2, 15)}`,
         status: "Valid",
         description: eventData.description,
@@ -208,6 +255,20 @@ const QuantumMintNFT = () => {
         tokenURI: tokenURI,
         tokenId: `TICKET-${Date.now()}`
       };
+
+      // Record the ticket mint in the backend
+      try {
+        await eventService.recordTicketMint(eventData.id, {
+          tokenId: mintedTicket.tokenId,
+          ownerAddress: walletAddress,
+          seatNumber: mintedTicket.seatNumber,
+          ticketType: mintedTicket.ticketType,
+          price: eventData.pricing[selectedTicketType]
+        });
+      } catch (recordError) {
+        console.warn('Failed to record ticket mint:', recordError);
+        // Continue with minting even if recording fails
+      }
 
       const existingTickets = localStorage.getItem(`mintedTickets_${walletAddress}`);
       const tickets = existingTickets ? JSON.parse(existingTickets) : [];
@@ -338,12 +399,71 @@ const QuantumMintNFT = () => {
           </div>
         </div>
 
-        {/* Main Content Card */}
-        <div className="bg-gray-900/30 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-8 
-                      hover:border-purple-500/50 transition-all duration-300 mb-8">
-          
-          {/* Step 1: Connect Wallet */}
-          {!walletAddress ? (
+        {/* Loading Event Data */}
+        {loadingEvent ? (
+          <div className="bg-gray-900/30 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-8 mb-8">
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full 
+                            flex items-center justify-center mx-auto mb-6">
+                <Loader2 className="w-10 h-10 text-purple-400 animate-spin" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4">Loading Event Data</h3>
+              <p className="text-gray-400">Fetching event information...</p>
+            </div>
+          </div>
+        ) : !eventData ? (
+          <div className="bg-gray-900/30 backdrop-blur-xl rounded-2xl border border-red-500/30 p-8 mb-8">
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-gradient-to-r from-red-600/20 to-red-900/20 rounded-full 
+                            flex items-center justify-center mx-auto mb-6">
+                <X className="w-10 h-10 text-red-400" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-red-400">Event Not Found</h3>
+              <p className="text-gray-400 mb-6">The event you're trying to mint a ticket for could not be found.</p>
+              <a href="/ticketsell" className="inline-block">
+                <button className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl hover:scale-105 transition-transform">
+                  Browse Events
+                </button>
+              </a>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Ticket Type Selection */}
+            <div className="bg-gray-900/30 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-8 mb-8">
+              <h3 className="text-2xl font-bold mb-6 flex items-center">
+                <Ticket className="w-6 h-6 mr-2 text-purple-400" />
+                Select Ticket Type
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {Object.entries(eventData.pricing).map(([type, price]) => (
+                  <button
+                    key={type}
+                    onClick={() => setSelectedTicketType(type)}
+                    className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+                      selectedTicketType === type
+                        ? 'border-purple-500 bg-purple-500/20'
+                        : 'border-gray-700 hover:border-purple-400'
+                    }`}
+                  >
+                    <h4 className="text-lg font-semibold text-white capitalize mb-2">{type}</h4>
+                    <p className="text-2xl font-bold text-purple-400">{price} AVAX</p>
+                    <p className="text-sm text-gray-400 mt-2">
+                      {type === 'regular' && 'Standard access to the event'}
+                      {type === 'vip' && 'Premium seating and VIP lounge access'}
+                      {type === 'vvip' && 'Exclusive backstage access and perks'}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Main Content Card */}
+            <div className="bg-gray-900/30 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-8 
+                          hover:border-purple-500/50 transition-all duration-300 mb-8">
+              
+              {/* Step 1: Connect Wallet */}
+              {!walletAddress ? (
             <div className="text-center py-12">
               <div className="w-20 h-20 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full 
                             flex items-center justify-center mx-auto mb-6">
@@ -461,21 +581,23 @@ const QuantumMintNFT = () => {
           </div>
         )}
 
-        {/* Security Notice */}
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6">
-          <div className="flex items-start space-x-3">
-            <Shield className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
-            <div>
-              <h4 className="text-blue-400 font-semibold mb-2">Security Notice</h4>
-              <ul className="text-sm text-gray-300 space-y-1">
-                <li>• Your NFT ticket is securely stored on the Avalanche blockchain</li>
-                <li>• Each ticket is unique and cannot be duplicated or forged</li>
-                <li>• Keep your wallet private keys secure at all times</li>
-                <li>• Transaction fees will be required for minting</li>
-              </ul>
+            {/* Security Notice */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6">
+              <div className="flex items-start space-x-3">
+                <Shield className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
+                <div>
+                  <h4 className="text-blue-400 font-semibold mb-2">Security Notice</h4>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• Your NFT ticket is securely stored on the Avalanche blockchain</li>
+                    <li>• Each ticket is unique and cannot be duplicated or forged</li>
+                    <li>• Keep your wallet private keys secure at all times</li>
+                    <li>• Transaction fees will be required for minting</li>
+                  </ul>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+            </>
+          )}
       </main>
 
       {/* Success Modal */}
