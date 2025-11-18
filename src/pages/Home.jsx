@@ -92,6 +92,7 @@ const UltimateEventPlatform = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+  const [activeEventFilter, setActiveEventFilter] = useState('all');
 
   useEffect(() => {
     setIsVisible(true);
@@ -368,9 +369,9 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                   group-hover:blur-2xl transition-all duration-300" />
                 <div className="relative z-10 flex items-center space-x-2">
                   <span className="relative text-white font-medium flex items-center space-x-2">
-                  <Plus className="w-3 h-3" />
-                  <span>Create Event</span>
-                </span>
+                    <Plus className="w-3 h-3" />
+                    <span>Create Event</span>
+                  </span>
                 </div>
               </button>
 
@@ -419,6 +420,23 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               Discover Amazing Events
             </h2>
             <p className="text-sm text-gray-400">Secure, transparent, and efficient event ticketing powered by Avalanche blockchain</p>
+            
+            {/* Filter Tags */}
+            <div className="flex justify-center space-x-2 mt-6">
+              {['all', 'upcoming', 'ongoing', 'past'].map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setActiveEventFilter(filter)}
+                  className={`px-4 py-2 text-sm rounded-full transition-all duration-300 capitalize
+                    ${activeEventFilter === filter 
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25' 
+                      : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-white'
+                    }`}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -576,7 +594,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
           <Chatbit />
         </div>
       </section>
-      <section className="py-8">
+      {/* <section className="py-8">
         <div>
           <Testimonials />
         </div>
@@ -590,7 +608,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
         <div>
           <Teams />
         </div>
-      </section>
+      </section> */}
       {/* Footer section removed to fix duplicate footer issue */}
     </div>
   );
