@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Ticket, Calendar, Users, TrendingUp, ChevronRight, Star, Zap, Activity, Globe, Power } from 'lucide-react';
+import { Moon, Ticket, Calendar, Users, TrendingUp, ChevronRight, Star, Zap, Activity, Globe, Power, Clock, ArrowRight, Plus } from 'lucide-react';
 import bitcoinImage from "../assets/EventVerse Tickets.jpg"; 
 import Chatbit from './Chatbit';
 import Testimonials from './Testimonials';
@@ -360,7 +360,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
 
             <div className="flex space-x-6">
               <button 
-                onClick={() => handleProtectedNavigation('/ticketsell')}
+                onClick={() => document.getElementById('events-section').scrollIntoView({ behavior: 'smooth' })}
                 className="group relative px-8 py-4 rounded-xl overflow-hidden"
               >
                 <div className="absolute inset-0 bg-purple-600" />
@@ -408,6 +408,108 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
           </div>
         </div>
       </main>
+
+      {/* Events Section - Integrated from Ticketsell */}
+      <section id="events-section" className="py-20 px-6 relative">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              Discover Amazing Events
+            </h2>
+            <p className="text-xl text-gray-400">Secure, transparent, and efficient event ticketing powered by Avalanche blockchain</p>
+          </div>
+
+          <div className="flex justify-center mb-8">
+            <button 
+              onClick={() => handleProtectedNavigation('/Myevent')}
+              className="relative px-6 py-3 rounded-xl overflow-hidden group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600" />
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <span className="relative text-white font-medium flex items-center space-x-2">
+                <Plus className="w-4 h-4" />
+                <span>Create Event</span>
+              </span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                id: 1,
+                name: "Blockchain Summit 2025",
+                date: "March 15, 2025",
+                price: "0.5 AVAX",
+                available: 150,
+                total: 500,
+                image: "/src/assets/imag.png"
+              },
+              {
+                id: 2,
+                name: "Web3 Music Festival",
+                date: "April 20, 2025",
+                price: "1.2 AVAX",
+                available: 75,
+                total: 1000,
+                image: "/src/assets/dr.png"
+              },
+              {
+                id: 3,
+                name: "NFT Art Exhibition",
+                date: "May 5, 2025",
+                price: "0.8 AVAX",
+                available: 200,
+                total: 300,
+                image: "/src/assets/im.png"
+              }
+            ].map((event, index) => (
+              <div
+                key={event.id}
+                className="group relative transition-all duration-500 transform hover:scale-105 hover:-translate-y-2"
+                style={{ transitionDelay: `${index * 100}ms` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                <div className="relative bg-black/40 backdrop-blur-xl rounded-xl border border-purple-500/30 overflow-hidden">
+                  <img 
+                    src={event.image} 
+                    alt={event.name}
+                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold mb-2">{event.name}</h3>
+                    <div className="flex items-center space-x-2 text-gray-400 mb-4">
+                      <Clock className="w-4 h-4" />
+                      <span>{event.date}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold text-purple-400">{event.price}</span>
+                      <button 
+                        onClick={() => handleProtectedNavigation('/mint')}
+                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center space-x-2 group-hover:shadow-lg group-hover:shadow-purple-500/20 transition-all"
+                      >
+                        <span>Purchase</span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </div>
+                    <div className="mt-4 bg-purple-900/20 rounded-lg p-3">
+                      <div className="flex justify-between text-sm text-gray-400">
+                        <span>Available: {event.available}</span>
+                        <span>Total: {event.total}</span>
+                      </div>
+                      <div className="mt-2 h-2 bg-purple-900/40 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
+                          style={{ width: `${(event.available / event.total) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Features Section */}
      {/* Features with Interactive Animations */}
