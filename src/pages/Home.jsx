@@ -65,18 +65,18 @@ const AnimatedCard = ({ children, delay, onClick, isSelected }) => {
   
   return (
     <div
-      className={`relative group transition-all duration-500 transform 
-        ${isSelected ? 'scale-105 -translate-y-2' : ''} 
-        ${isHovered ? 'translate-y-[-8px]' : ''}`}
+      className={`relative group transition-all duration-300 transform 
+        ${isSelected ? 'scale-105 -translate-y-1' : ''} 
+        ${isHovered ? 'translate-y-[-4px]' : ''}`}
       style={{ animationDelay: `${delay}ms` }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
-      <div className="absolute inset-0 bg-purple-600/20 rounded-xl blur-xl
-        group-hover:blur-2xl transition-all duration-300" />
-      <div className="relative bg-black/40 backdrop-blur-xl rounded-xl border border-purple-500/30
-        group-hover:border-purple-500/50 p-6 transition-all duration-300">
+      <div className="absolute inset-0 bg-purple-600/20 rounded-lg blur-lg
+        group-hover:blur-xl transition-all duration-300" />
+      <div className="relative bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30
+        group-hover:border-purple-500/50 p-3 transition-all duration-300">
         {children}
       </div>
     </div>
@@ -334,12 +334,12 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
         </div>
       )}
 
-      {/* Hero Section */}
-      <main className="relative pt-32 pb-20 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 gap-12 items-center">
+      {/* Hero Section - Compact */}
+      <main className="relative pt-16 pb-12 px-4">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-8 items-center">
           <div className={`transition-all duration-1000 delay-300 
             ${isVisible ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}`}>
-            <h1 className="text-7xl font-bold mb-8 leading-tight">
+            <h1 className="text-4xl font-bold mb-4 leading-tight">
               <div className="overflow-hidden">
                 <span className="inline-block animate-slide-up-fade">Experience</span>
               </div>
@@ -353,30 +353,30 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               </div>
             </h1>
             
-            <p className="text-xl text-gray-300 mb-10 opacity-0 animate-fade-in delay-700">
+            <p className="text-base text-gray-300 mb-6 opacity-0 animate-fade-in delay-700">
               Step into a world where events transcend reality. Experience seamless ticketing,
               immersive venues, and next-generation event management.
             </p>
 
-            <div className="flex space-x-6">
+            <div className="flex space-x-4">
               <button 
                 onClick={() => document.getElementById('events-section').scrollIntoView({ behavior: 'smooth' })}
-                className="group relative px-8 py-4 rounded-xl overflow-hidden"
+                className="group relative px-4 py-2 text-sm rounded-lg overflow-hidden"
               >
                 <div className="absolute inset-0 bg-purple-600" />
                 <div className="absolute inset-0 bg-purple-600 blur-xl
                   group-hover:blur-2xl transition-all duration-300" />
                 <div className="relative z-10 flex items-center space-x-2">
                   <span>Explore Events</span>
-                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </button>
 
               <button 
                 onClick={() => handleProtectedNavigation('/ticket')}
-                className="group relative px-8 py-4 rounded-xl overflow-hidden"
+                className="group relative px-4 py-2 text-sm rounded-lg overflow-hidden"
               >
-                <div className="absolute inset-0 border border-purple-500 rounded-xl" />
+                <div className="absolute inset-0 border border-purple-500 rounded-lg" />
                 <div className="absolute inset-0 bg-purple-500/10
                   transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
                 <span className="relative z-10">Tickets Collection</span>
@@ -386,12 +386,12 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
 
           <div className={`relative transition-all duration-1000 delay-500 
             ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
-            <div className="relative w-full aspect-square group">
+            <div className="relative w-full h-64 group">
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="absolute inset-0 bg-purple-500 rounded-3xl
-                    opacity-20 blur-3xl group-hover:blur-2xl transition-all duration-500"
+                  className="absolute inset-0 bg-purple-500 rounded-2xl
+                    opacity-20 blur-2xl group-hover:blur-xl transition-all duration-500"
                   style={{
                     transform: `rotate(${i * 30}deg)`,
                     animationDelay: `${i * 200}ms`
@@ -401,7 +401,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               <img 
                 src={bitcoinImage}
                 alt="VR Experience"
-                className="relative z-10 w-full h-auto object-cover rounded-3xl transform 
+                className="relative z-10 w-full h-full object-cover rounded-2xl transform 
                   group-hover:scale-105 group-hover:rotate-3 transition-all duration-700"
               />
             </div>
@@ -409,31 +409,31 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
         </div>
       </main>
 
-      {/* Events Section - Integrated from Ticketsell */}
-      <section id="events-section" className="py-20 px-6 relative">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+      {/* Events Section - Compact */}
+      <section id="events-section" className="py-12 px-4 relative">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
               Discover Amazing Events
             </h2>
-            <p className="text-xl text-gray-400">Secure, transparent, and efficient event ticketing powered by Avalanche blockchain</p>
+            <p className="text-sm text-gray-400">Secure, transparent, and efficient event ticketing powered by Avalanche blockchain</p>
           </div>
 
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-6">
             <button 
               onClick={() => handleProtectedNavigation('/Myevent')}
-              className="relative px-6 py-3 rounded-xl overflow-hidden group"
+              className="relative px-4 py-2 text-sm rounded-lg overflow-hidden group"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600" />
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <span className="relative text-white font-medium flex items-center space-x-2">
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3 h-3" />
                 <span>Create Event</span>
               </span>
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               {
                 id: 1,
@@ -461,42 +461,51 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                 available: 200,
                 total: 300,
                 image: "/src/assets/im.png"
+              },
+              {
+                id: 4,
+                name: "DeFi Conference",
+                date: "June 10, 2025",
+                price: "0.3 AVAX",
+                available: 300,
+                total: 400,
+                image: "/src/assets/rb.png"
               }
             ].map((event, index) => (
               <div
                 key={event.id}
-                className="group relative transition-all duration-500 transform hover:scale-105 hover:-translate-y-2"
-                style={{ transitionDelay: `${index * 100}ms` }}
+                className="group relative transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
+                style={{ transitionDelay: `${index * 50}ms` }}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-300" />
-                <div className="relative bg-black/40 backdrop-blur-xl rounded-xl border border-purple-500/30 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                <div className="relative bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30 overflow-hidden">
                   <img 
                     src={event.image} 
                     alt={event.name}
-                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-300"
                   />
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold mb-2">{event.name}</h3>
-                    <div className="flex items-center space-x-2 text-gray-400 mb-4">
-                      <Clock className="w-4 h-4" />
-                      <span>{event.date}</span>
+                  <div className="p-3">
+                    <h3 className="text-sm font-semibold mb-1 truncate">{event.name}</h3>
+                    <div className="flex items-center space-x-1 text-gray-400 mb-2">
+                      <Clock className="w-3 h-3" />
+                      <span className="text-xs">{event.date}</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold text-purple-400">{event.price}</span>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-purple-400">{event.price}</span>
                       <button 
                         onClick={() => handleProtectedNavigation('/mint')}
-                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center space-x-2 group-hover:shadow-lg group-hover:shadow-purple-500/20 transition-all"
+                        className="px-2 py-1 text-xs bg-gradient-to-r from-purple-600 to-blue-600 rounded flex items-center space-x-1 group-hover:shadow-lg group-hover:shadow-purple-500/20 transition-all"
                       >
-                        <span>Purchase</span>
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        <span>Buy</span>
+                        <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                       </button>
                     </div>
-                    <div className="mt-4 bg-purple-900/20 rounded-lg p-3">
-                      <div className="flex justify-between text-sm text-gray-400">
-                        <span>Available: {event.available}</span>
-                        <span>Total: {event.total}</span>
+                    <div className="bg-purple-900/20 rounded p-2">
+                      <div className="flex justify-between text-xs text-gray-400 mb-1">
+                        <span>{event.available}</span>
+                        <span>{event.total}</span>
                       </div>
-                      <div className="mt-2 h-2 bg-purple-900/40 rounded-full overflow-hidden">
+                      <div className="h-1 bg-purple-900/40 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
                           style={{ width: `${(event.available / event.total) * 100}%` }}
@@ -511,42 +520,39 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
         </div>
       </section>
 
-      {/* Features Section */}
-     {/* Features with Interactive Animations */}
-     <section className="py-20 px-6 relative">
-      <div className="max-w-7xl mx-auto grid grid-cols-3 gap-8">
+      {/* Features Section - Compact */}
+      <section className="py-8 px-4 relative">
+        <div className="max-w-6xl mx-auto grid grid-cols-3 gap-4">
           {features.map((feature, index) => (
             <AnimatedCard
               key={index}
-              delay={index * 200}
+              delay={index * 100}
               isSelected={selectedFeature === index}
               onClick={() => setSelectedFeature(index)}
             >
               <div className={`relative group-hover:scale-105 transition-transform duration-300`}>
-                <div className={`w-16 h-16 mb-6 rounded-xl bg-${feature.color}
-                  flex items-center justify-center transform group-hover:rotate-12 transition-all duration-500`}>
-                  {feature.icon}
+                <div className={`w-10 h-10 mb-3 rounded-lg bg-${feature.color}
+                  flex items-center justify-center transform group-hover:rotate-12 transition-all duration-300`}>
+                  <div className="w-5 h-5">{feature.icon}</div>
                 </div>
-                <h3 className="text-xl font-semibold mb-4 text-white">{feature.title}</h3>
-                <p className="text-gray-400 group-hover:text-gray-300 transition-colors">
+                <h3 className="text-sm font-semibold mb-2 text-white">{feature.title}</h3>
+                <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">
                   {feature.description}
                 </p>
               </div>
             </AnimatedCard>
           ))}
         </div>
-      
-      
       </section>
 
-      {/* Interactive Stats with Hover Effects */}
-      <section className="py-20 px-6 relative">
-      <div className="max-w-7xl mx-auto grid grid-cols-4 gap-8">
+      {/* Interactive Stats - Compact */}
+      <section className="py-8 px-4 relative">
+        <div className="max-w-6xl mx-auto grid grid-cols-4 gap-4">
           {[ 
-            { value: "100K+", label: "Active Users", icon: <Users />, color: "purple" },
-            { value: "50K+", label: "Events Hosted", icon: <Calendar />, color: "blue" },
-            { value: "1M+", label: "Tickets Sold", icon: <Ticket />, color: "purple" },
-            { value: "99%", label: "Security  Assurance", icon: <Star />, color: "blue" }
+            { value: "100K+", label: "Active Users", icon: <Users className="w-4 h-4" />, color: "purple" },
+            { value: "50K+", label: "Events Hosted", icon: <Calendar className="w-4 h-4" />, color: "blue" },
+            { value: "1M+", label: "Tickets Sold", icon: <Ticket className="w-4 h-4" />, color: "purple" },
+            { value: "99%", label: "Security Assurance", icon: <Star className="w-4 h-4" />, color: "blue" }
           ].map((stat, index) => (
             <div
               key={index}
@@ -555,20 +561,20 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               onMouseLeave={() => setActiveStat(null)}
             >
               <div className={`absolute inset-0 bg-${stat.color}-500/20
-                rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300`} />
-              <div className="relative bg-black/40 backdrop-blur-xl rounded-xl border border-purple-500/30 
-                group-hover:border-purple-500/50 p-6 transform group-hover:translate-y-[-8px] 
+                rounded-lg blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300`} />
+              <div className="relative bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30 
+                group-hover:border-purple-500/50 p-3 transform group-hover:translate-y-[-4px] 
                 transition-all duration-300">
                 <div className="flex flex-col items-center">
-                  <div className={`w-16 h-16 rounded-full bg-${stat.color}-500/20 
-                    flex items-center justify-center mb-4 transform group-hover:scale-110 
-                    group-hover:rotate-12 transition-all duration-500`}>
+                  <div className={`w-8 h-8 rounded-full bg-${stat.color}-500/20 
+                    flex items-center justify-center mb-2 transform group-hover:scale-110 
+                    group-hover:rotate-12 transition-all duration-300`}>
                     {stat.icon}
                   </div>
-                  <div className={`text-4xl font-bold text-${stat.color}-400 mb-2`}>
+                  <div className={`text-lg font-bold text-${stat.color}-400 mb-1`}>
                     {stat.value}
                   </div>
-                  <div className="text-gray-400 group-hover:text-gray-300 transition-colors">
+                  <div className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors text-center">
                     {stat.label}
                   </div>
                 </div>
@@ -576,24 +582,23 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
             </div>
           ))}
         </div>
-      
       </section>
-      <section>
+      <section className="py-8">
         <div>
           <Chatbit />
         </div>
       </section>
-      <section>
+      <section className="py-8">
         <div>
           <Testimonials />
         </div>
       </section>
-      <section>
+      <section className="py-8">
         <div>
           <Discover />
         </div>
       </section>
-      <section>
+      <section className="py-8">
         <div>
           <Teams />
         </div>
