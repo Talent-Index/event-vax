@@ -360,15 +360,17 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
 
             <div className="flex space-x-4">
               <button 
-                onClick={() => document.getElementById('events-section').scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => handleProtectedNavigation('/Myevent')}
                 className="group relative px-4 py-2 text-sm rounded-lg overflow-hidden"
               >
                 <div className="absolute inset-0 bg-purple-600" />
                 <div className="absolute inset-0 bg-purple-600 blur-xl
                   group-hover:blur-2xl transition-all duration-300" />
                 <div className="relative z-10 flex items-center space-x-2">
-                  <span>Explore Events</span>
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <span className="relative text-white font-medium flex items-center space-x-2">
+                  <Plus className="w-3 h-3" />
+                  <span>Create Event</span>
+                </span>
                 </div>
               </button>
 
@@ -417,20 +419,6 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               Discover Amazing Events
             </h2>
             <p className="text-sm text-gray-400">Secure, transparent, and efficient event ticketing powered by Avalanche blockchain</p>
-          </div>
-
-          <div className="flex justify-center mb-6">
-            <button 
-              onClick={() => handleProtectedNavigation('/Myevent')}
-              className="relative px-4 py-2 text-sm rounded-lg overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600" />
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="relative text-white font-medium flex items-center space-x-2">
-                <Plus className="w-3 h-3" />
-                <span>Create Event</span>
-              </span>
-            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

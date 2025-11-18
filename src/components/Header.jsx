@@ -91,61 +91,56 @@ const Header = () => {
   };
 
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-1000 \
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-500 \
       ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/10 to-blue-900/10 backdrop-blur-xl" />
-        <div className="relative max-w-7xl mx-auto px-6 py-4">
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+        <div className="relative max-w-6xl mx-auto py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3 group cursor-pointer">
-              <div className="relative w-12 h-12">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl \
-                  group-hover:scale-110 group-hover:rotate-180 transition-all duration-700" />
-                <div className="absolute inset-1 bg-black rounded-lg" />
+            <div className="flex items-center space-x-2 group cursor-pointer">
+              <div className="relative w-8 h-8">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">E</span>
+                  <span className="text-sm font-bold text-white">E</span>
                 </div>
               </div>
-              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r \
-                from-purple-400 to-blue-400 group-hover:from-purple-300 group-hover:to-blue-300 \
-                transition-all duration-300">EventVerse</span>
+              <span className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r \
+                from-purple-400 to-blue-400">EventVerse</span>
             </div>
-            <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-4">
               {[
                 { name: 'Home', path: '/' },
-                { name: 'WaitingList', path: '/waiting' },
-                { name: 'TicketMinting', path: '/mint' },
+                { name: 'List', path: '/waiting' },
+                { name: 'Mint', path: '/mint' },
               ].map(({ name, path }) => (
                 <Link
                   key={name}
                   to={path}
-                  className="relative group py-2"
+                  className="relative group py-1"
                 >
-                  <span className="relative z-10 text-gray-300 group-hover:text-white transition-colors duration-300">
+                  <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
                     {name}
                   </span>
                   <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-500 \
-                    group-hover:w-full group-hover:left-0 transition-all duration-300" />
+                    group-hover:w-full group-hover:left-0 transition-all duration-200" />
                 </Link>
               ))}
               <button 
                 onClick={walletAddress ? disconnectWallet : connectWallet}
                 disabled={isConnecting}
-                className="group relative px-8 py-4 rounded-xl overflow-hidden"
+                className="relative px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 \
+                  hover:from-purple-500 hover:to-blue-500 transition-all text-sm"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600" />
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 blur-xl \
-                  group-hover:blur-2xl transition-all duration-300" />
-                <div className="relative z-10 flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   {isConnecting ? (
                     'Connecting...'
                   ) : walletAddress ? (
                     <>
-                      <span>{`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}</span>
-                      <Power className="w-4 h-4" />
+                      <span>{`${walletAddress.slice(0, 4)}...${walletAddress.slice(-3)}`}</span>
+                      <Power className="w-3 h-3" />
                     </>
                   ) : (
-                    'Connect Wallet'
+                    'Connect'
                   )}
                 </div>
               </button>
