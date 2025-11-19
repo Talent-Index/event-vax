@@ -479,6 +479,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               }
             ].map((event, index) => (
               <div
+                onClick={() => handleProtectedNavigation('/mint')}
                 key={event.id}
                 className="group relative transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
                 style={{ transitionDelay: `${index * 50}ms` }}
@@ -498,13 +499,6 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                     </div>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-semibold text-purple-400">{event.price}</span>
-                      <button 
-                        onClick={() => handleProtectedNavigation('/mint')}
-                        className="px-2 py-1 text-xs bg-gradient-to-r from-purple-600 to-blue-600 rounded flex items-center space-x-1 group-hover:shadow-lg group-hover:shadow-purple-500/20 transition-all"
-                      >
-                        <span>Buy</span>
-                        <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                      </button>
                     </div>
                     <div className="bg-purple-900/20 rounded p-2">
                       <div className="flex justify-between text-xs text-gray-400 mb-1">
