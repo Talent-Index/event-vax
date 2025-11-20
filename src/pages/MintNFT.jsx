@@ -278,7 +278,7 @@ const QuantumMintNFT = () => {
       </div>
 
       {/* Navigation Bar */}
-      <nav className="fixed top-0 left-0 right-0 bg-gray-900/80 backdrop-blur-md z-40 border-b border-purple-500/20">
+      {/* <nav className="fixed top-0 left-0 right-0 bg-gray-900/80 backdrop-blur-md z-40 border-b border-purple-500/20">
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <Sparkles className="w-6 h-6 text-purple-400" />
@@ -293,7 +293,7 @@ const QuantumMintNFT = () => {
             </div>
           )}
         </div>
-      </nav>
+      </nav> */}
 
       <main className="relative container mx-auto px-4 py-24 max-w-5xl">
         {/* Header */}
