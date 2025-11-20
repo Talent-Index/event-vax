@@ -15,6 +15,10 @@ const QuantumEventCreator = () => {
     description: ''
   });
   const [focusedField, setFocusedField] = useState(null);
+  const [eventFlyer, setEventFlyer] = useState(null);
+  const [flyerPreview, setFlyerPreview] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   useEffect(() => {
     setTimeout(() => setIsLoading(false), 1500);
@@ -36,9 +40,70 @@ const QuantumEventCreator = () => {
     }));
   };
 
+  const validateImage = (file) => {
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!validTypes.includes(file.type)) {
+      setUploadError('Please upload a valid image file (JPG, PNG, GIF, or WebP)');
+      return false;
+    }
+
+    if (file.size > maxSize) {
+      setUploadError('Image size must be less than 5MB');
+      return false;
+    }
+
+    setUploadError('');
+    return true;
+  };
+
+  const handleImageUpload = (file) => {
+    if (file && validateImage(file)) {
+      setEventFlyer(file);
+      const previewUrl = URL.createObjectURL(file);
+      setFlyerPreview(previewUrl);
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  const removeImage = () => {
+    setEventFlyer(null);
+    setFlyerPreview(null);
+    setUploadError('');
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('Event Created:', formData);
+    if (eventFlyer) {
+      console.log('Event flyer:', eventFlyer.name);
+    }
     // Handle event creation logic here
   };
 
@@ -62,7 +127,7 @@ const QuantumEventCreator = () => {
                     border-2 ${color} hover:shadow-lg hover:shadow-${color}/20`}>
       <div className={`absolute inset-0 bg-gradient-to-r ${color.replace('border', 'from')}/10 to-transparent
                       opacity-0 hover:opacity-100 transition-opacity duration-500`} />
-      
+
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
@@ -73,7 +138,7 @@ const QuantumEventCreator = () => {
             <Star className="w-5 h-5 text-yellow-400 animate-pulse" />
           )}
         </div>
-        
+
         <input
           type="number"
           name={`${tier.toLowerCase()}Price`}
@@ -82,11 +147,10 @@ const QuantumEventCreator = () => {
           onFocus={() => setFocusedField(`${tier}Price`)}
           onBlur={() => setFocusedField(null)}
           placeholder="0.00"
-          className={`w-full bg-gray-800/50 border ${
-            focusedField === `${tier}Price` ? color : 'border-gray-700'
-          } rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-all duration-300`}
+          className={`w-full bg-gray-800/50 border ${focusedField === `${tier}Price` ? color : 'border-gray-700'
+            } rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-all duration-300`}
         />
-        
+
         <ul className="mt-4 space-y-2 text-sm text-gray-400">
           {features.map((feature, idx) => (
             <li key={idx} className="flex items-start">
@@ -188,7 +252,7 @@ const QuantumEventCreator = () => {
               <Sparkles className="w-6 h-6 mr-2 text-purple-400" />
               Event Details
             </h2>
-            
+
             <div className="grid md:grid-cols-2 gap-6">
               {/* Event Name */}
               <div className="md:col-span-2">
@@ -204,9 +268,8 @@ const QuantumEventCreator = () => {
                     onFocus={() => setFocusedField('eventName')}
                     onBlur={() => setFocusedField(null)}
                     placeholder="Enter your event name"
-                    className={`w-full bg-gray-800/50 border ${
-                      focusedField === 'eventName' ? 'border-purple-500' : 'border-gray-700'
-                    } rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-all duration-300`}
+                    className={`w-full bg-gray-800/50 border ${focusedField === 'eventName' ? 'border-purple-500' : 'border-gray-700'
+                      } rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-all duration-300`}
                     required
                   />
                   {focusedField === 'eventName' && (
@@ -228,9 +291,8 @@ const QuantumEventCreator = () => {
                   onChange={handleInputChange}
                   onFocus={() => setFocusedField('eventDate')}
                   onBlur={() => setFocusedField(null)}
-                  className={`w-full bg-gray-800/50 border ${
-                    focusedField === 'eventDate' ? 'border-blue-500' : 'border-gray-700'
-                  } rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-300`}
+                  className={`w-full bg-gray-800/50 border ${focusedField === 'eventDate' ? 'border-blue-500' : 'border-gray-700'
+                    } rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-300`}
                   required
                 />
               </div>
@@ -249,9 +311,8 @@ const QuantumEventCreator = () => {
                   onFocus={() => setFocusedField('venue')}
                   onBlur={() => setFocusedField(null)}
                   placeholder="Enter venue location"
-                  className={`w-full bg-gray-800/50 border ${
-                    focusedField === 'venue' ? 'border-green-500' : 'border-gray-700'
-                  } rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-all duration-300`}
+                  className={`w-full bg-gray-800/50 border ${focusedField === 'venue' ? 'border-green-500' : 'border-gray-700'
+                    } rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-all duration-300`}
                   required
                 />
               </div>
@@ -269,10 +330,102 @@ const QuantumEventCreator = () => {
                   onBlur={() => setFocusedField(null)}
                   placeholder="Describe your event..."
                   rows="4"
-                  className={`w-full bg-gray-800/50 border ${
-                    focusedField === 'description' ? 'border-purple-500' : 'border-gray-700'
-                  } rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-all duration-300 resize-none`}
+                  className={`w-full bg-gray-800/50 border ${focusedField === 'description' ? 'border-purple-500' : 'border-gray-700'
+                    } rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-all duration-300 resize-none`}
                 />
+              </div>
+
+              {/* Event Flyer Upload */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Event Flyer Image
+                </label>
+
+                {!flyerPreview ? (
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 cursor-pointer ${isDragging
+                        ? 'border-purple-500 bg-purple-500/10'
+                        : 'border-gray-700 hover:border-purple-500/50 hover:bg-gray-800/30'
+                      }`}
+                  >
+                    <input
+                      type="file"
+                      id="flyer-upload"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <label htmlFor="flyer-upload" className="cursor-pointer">
+                      <div className="flex flex-col items-center">
+                        <div className="w-16 h-16 mb-4 rounded-full bg-purple-500/20 flex items-center justify-center">
+                          <svg
+                            className="w-8 h-8 text-purple-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                            />
+                          </svg>
+                        </div>
+                        <p className="text-gray-300 font-medium mb-2">
+                          Drag and drop your event flyer here
+                        </p>
+                        <p className="text-gray-500 text-sm mb-3">or</p>
+                        <span className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium hover:from-purple-500 hover:to-blue-500 transition-all duration-300">
+                          Browse Files
+                        </span>
+                        <p className="text-gray-500 text-xs mt-4">
+                          Supported: JPG, PNG, GIF, WebP (Max 5MB)
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="relative border-2 border-purple-500/50 rounded-xl p-6 bg-purple-500/5">
+                    <div className="flex items-start gap-6">
+                      <div className="relative group">
+                        <img
+                          src={flyerPreview}
+                          alt="Event flyer preview"
+                          className="w-40 h-40 object-cover rounded-lg shadow-lg"
+                        />
+                        <div className="absolute inset-0 bg-purple-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-white font-medium mb-2 text-lg">
+                          {eventFlyer?.name}
+                        </p>
+                        <p className="text-gray-400 text-sm mb-4">
+                          {(eventFlyer?.size / 1024).toFixed(2)} KB
+                        </p>
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          className="px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 hover:bg-red-500/30 hover:border-red-500 transition-all duration-300 text-sm font-medium"
+                        >
+                          Remove Image
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {uploadError && (
+                  <div className="mt-3 flex items-center text-red-400 text-sm">
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {uploadError}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -283,7 +436,7 @@ const QuantumEventCreator = () => {
               <DollarSign className="w-6 h-6 mr-2 text-purple-400" />
               Ticket Pricing (AVAX)
             </h2>
-            
+
             <div className="grid md:grid-cols-3 gap-6">
               <PriceCard
                 tier="Regular"
@@ -317,7 +470,7 @@ const QuantumEventCreator = () => {
             >
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 animate-gradient-x" />
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                   style={{ background: 'linear-gradient(45deg, rgba(168,85,247,0.4) 0%, rgba(147,51,234,0.4) 100%)' }} />
+                style={{ background: 'linear-gradient(45deg, rgba(168,85,247,0.4) 0%, rgba(147,51,234,0.4) 100%)' }} />
               <div className="relative z-10 flex items-center space-x-3">
                 <Plus className="w-5 h-5" />
                 <span className="font-bold text-lg">Create Event</span>
