@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Ticket, Calendar, Users, TrendingUp, ChevronRight, Star, Zap, Activity, Globe, Power } from 'lucide-react';
-import bitcoinImage from "../assets/EventVerse Tickets.jpg"; 
+import { Moon, Ticket, Calendar, Users, TrendingUp, ChevronRight, Star, Zap, Activity, Globe, Power, Clock, ArrowRight, Plus } from 'lucide-react';
+import bitcoinImage from "../assets/EventVerse Tickets.jpg";
 import Chatbit from './Chatbit';
 import Testimonials from './Testimonials';
 import Discover from './Discover';
@@ -24,17 +24,17 @@ const AVALANCHE_MAINNET_PARAMS = {
 
 const addAvalancheNetwork = async () => {
   if (typeof window.ethereum !== "undefined") {
-      try {
-          await window.ethereum.request({
-              method: "wallet_addEthereumChain",
-              params: [AVALANCHE_MAINNET_PARAMS],
-          });
-          console.log("Avalanche network added successfully!");
-      } catch (error) {
-          console.error("Error adding Avalanche network:", error);
-      }
+    try {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [AVALANCHE_MAINNET_PARAMS],
+      });
+      console.log("Avalanche network added successfully!");
+    } catch (error) {
+      console.error("Error adding Avalanche network:", error);
+    }
   } else {
-      console.error("MetaMask is not installed.");
+    console.error("MetaMask is not installed.");
   }
 };
 
@@ -62,21 +62,21 @@ const ParticleField = () => {
 
 const AnimatedCard = ({ children, delay, onClick, isSelected }) => {
   const [isHovered, setIsHovered] = useState(false);
-  
+
   return (
     <div
-      className={`relative group transition-all duration-500 transform 
-        ${isSelected ? 'scale-105 -translate-y-2' : ''} 
-        ${isHovered ? 'translate-y-[-8px]' : ''}`}
+      className={`relative group transition-all duration-300 transform 
+        ${isSelected ? 'scale-105 -translate-y-1' : ''} 
+        ${isHovered ? 'translate-y-[-4px]' : ''}`}
       style={{ animationDelay: `${delay}ms` }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
-      <div className="absolute inset-0 bg-purple-600/20 rounded-xl blur-xl
-        group-hover:blur-2xl transition-all duration-300" />
-      <div className="relative bg-black/40 backdrop-blur-xl rounded-xl border border-purple-500/30
-        group-hover:border-purple-500/50 p-6 transition-all duration-300">
+      <div className="absolute inset-0 bg-purple-600/20 rounded-lg blur-lg
+        group-hover:blur-xl transition-all duration-300" />
+      <div className="relative bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30
+        group-hover:border-purple-500/50 p-3 transition-all duration-300">
         {children}
       </div>
     </div>
@@ -92,6 +92,9 @@ const UltimateEventPlatform = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+  const [activeEventFilter, setActiveEventFilter] = useState('all');
+  const [events, setEvents] = useState([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
 
   useEffect(() => {
     setIsVisible(true);
@@ -103,8 +106,30 @@ const UltimateEventPlatform = () => {
   }, []);
 
   useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      setIsLoadingEvents(true);
+      const response = await fetch('http://localhost:8080/api/events');
+      const result = await response.json();
+
+      if (result.success) {
+        setEvents(result.data);
+      } else {
+        console.error('Failed to fetch events:', result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setIsLoadingEvents(false);
+    }
+  };
+
+  useEffect(() => {
     checkWalletConnection();
-    
+
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('disconnect', handleDisconnect);
@@ -206,7 +231,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
       });
-      
+
       if (accounts.length === 0) {
         throw new Error("No accounts found");
       }
@@ -238,22 +263,22 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
 
       // Step 3: Request signature for authentication
       const message = generateSignMessage(address);
-      
+
       try {
         const signature = await signer.signMessage(message);
         console.log("Signature successful:", signature);
-        
+
         // Store authentication status
         localStorage.setItem(`authenticated_${address}`, JSON.stringify({
           timestamp: Date.now(),
           signature: signature
         }));
-        
+
         setWalletAddress(address);
         setIsAuthenticated(true);
         setShowSignInPrompt(false);
         console.log("Connected and authenticated:", address);
-        
+
       } catch (signError) {
         if (signError.code === 4001) {
           throw new Error("Signature rejected by user");
@@ -261,7 +286,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
           throw new Error("Failed to sign message: " + signError.message);
         }
       }
-      
+
     } catch (error) {
       console.error("Error connecting to wallet:", error);
       alert(error.message || "Failed to connect wallet");
@@ -289,9 +314,9 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
       <ParticleField />
-      
+
       {/* Dynamic Cursor Effect */}
-      <div 
+      <div
         className="fixed w-64 h-64 pointer-events-none z-50 transition-transform duration-100"
         style={{
           transform: `translate(${mousePosition.x - 128}px, ${mousePosition.y - 128}px)`,
@@ -334,12 +359,12 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
         </div>
       )}
 
-      {/* Hero Section */}
-      <main className="relative pt-32 pb-20 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 gap-12 items-center">
+      {/* Hero Section - Compact */}
+      <main className="relative pt-16 pb-12 px-4">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-8 items-center">
           <div className={`transition-all duration-1000 delay-300 
             ${isVisible ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}`}>
-            <h1 className="text-7xl font-bold mb-8 leading-tight">
+            <h1 className="text-4xl font-bold mb-4 leading-tight">
               <div className="overflow-hidden">
                 <span className="inline-block animate-slide-up-fade">Experience</span>
               </div>
@@ -352,31 +377,33 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                 </span>
               </div>
             </h1>
-            
-            <p className="text-xl text-gray-300 mb-10 opacity-0 animate-fade-in delay-700">
+
+            <p className="text-base text-gray-300 mb-6 opacity-0 animate-fade-in delay-700">
               Step into a world where events transcend reality. Experience seamless ticketing,
               immersive venues, and next-generation event management.
             </p>
 
-            <div className="flex space-x-6">
-              <button 
-                onClick={() => handleProtectedNavigation('/ticketsell')}
-                className="group relative px-8 py-4 rounded-xl overflow-hidden"
+            <div className="flex space-x-4">
+              <button
+                onClick={() => handleProtectedNavigation('/Myevent')}
+                className="group relative px-4 py-2 text-sm rounded-lg overflow-hidden"
               >
                 <div className="absolute inset-0 bg-purple-600" />
                 <div className="absolute inset-0 bg-purple-600 blur-xl
                   group-hover:blur-2xl transition-all duration-300" />
                 <div className="relative z-10 flex items-center space-x-2">
-                  <span>Explore Events</span>
-                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <span className="relative text-white font-medium flex items-center space-x-2">
+                    <Plus className="w-3 h-3" />
+                    <span>Create Event</span>
+                  </span>
                 </div>
               </button>
 
-              <button 
+              <button
                 onClick={() => handleProtectedNavigation('/ticket')}
-                className="group relative px-8 py-4 rounded-xl overflow-hidden"
+                className="group relative px-4 py-2 text-sm rounded-lg overflow-hidden"
               >
-                <div className="absolute inset-0 border border-purple-500 rounded-xl" />
+                <div className="absolute inset-0 border border-purple-500 rounded-lg" />
                 <div className="absolute inset-0 bg-purple-500/10
                   transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
                 <span className="relative z-10">Tickets Collection</span>
@@ -386,22 +413,22 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
 
           <div className={`relative transition-all duration-1000 delay-500 
             ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
-            <div className="relative w-full aspect-square group">
+            <div className="relative w-full h-64 group">
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="absolute inset-0 bg-purple-500 rounded-3xl
-                    opacity-20 blur-3xl group-hover:blur-2xl transition-all duration-500"
+                  className="absolute inset-0 bg-purple-500 rounded-2xl
+                    opacity-20 blur-2xl group-hover:blur-xl transition-all duration-500"
                   style={{
                     transform: `rotate(${i * 30}deg)`,
                     animationDelay: `${i * 200}ms`
                   }}
                 />
               ))}
-              <img 
+              <img
                 src={bitcoinImage}
                 alt="VR Experience"
-                className="relative z-10 w-full h-auto object-cover rounded-3xl transform 
+                className="relative z-10 w-full h-full object-cover rounded-2xl transform 
                   group-hover:scale-105 group-hover:rotate-3 transition-all duration-700"
               />
             </div>
@@ -409,42 +436,159 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
         </div>
       </main>
 
-      {/* Features Section */}
-     {/* Features with Interactive Animations */}
-     <section className="py-20 px-6 relative">
-      <div className="max-w-7xl mx-auto grid grid-cols-3 gap-8">
+      {/* Events Section - Compact */}
+      <section id="events-section" className="py-12 px-4 relative">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              Discover Amazing Events
+            </h2>
+            <p className="text-sm text-gray-400">Secure, transparent, and efficient event ticketing powered by Avalanche blockchain</p>
+
+            {/* Filter Tags */}
+            <div className="flex justify-center space-x-2 mt-6">
+              {['all', 'upcoming', 'ongoing', 'past'].map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setActiveEventFilter(filter)}
+                  className={`px-4 py-2 text-sm rounded-full transition-all duration-300 capitalize
+                    ${activeEventFilter === filter
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25'
+                      : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-white'
+                    }`}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {isLoadingEvents ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="text-purple-400">Loading events...</div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {(events.length > 0 ? events : [
+                {
+                  id: 1,
+                  event_name: "Blockchain Summit 2025",
+                  event_date: "2025-03-15T10:00",
+                  regular_price: "0.5",
+                  venue: "Convention Center",
+                  flyer_image: "/src/assets/imag.png"
+                },
+                {
+                  id: 2,
+                  event_name: "Web3 Music Festival",
+                  event_date: "2025-04-20T18:00",
+                  regular_price: "1.2",
+                  venue: "Open Air Arena",
+                  flyer_image: "/src/assets/dr.png"
+                },
+                {
+                  id: 3,
+                  event_name: "NFT Art Exhibition",
+                  event_date: "2025-05-05T14:00",
+                  regular_price: "0.8",
+                  venue: "Art Gallery",
+                  flyer_image: "/src/assets/im.png"
+                },
+                {
+                  id: 4,
+                  event_name: "DeFi Conference",
+                  event_date: "2025-06-10T09:00",
+                  regular_price: "0.3",
+                  venue: "Tech Hub",
+                  flyer_image: "/src/assets/rb.png"
+                }
+              ]).map((event, index) => {
+                const eventDate = new Date(event.event_date);
+                const formattedDate = eventDate.toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric'
+                });
+
+                return (
+                  <div
+                    onClick={() => handleProtectedNavigation('/mint')}
+                    key={event.id}
+                    className="group relative transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 cursor-pointer"
+                    style={{ transitionDelay: `${index * 50}ms` }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                    <div className="relative bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30 overflow-hidden">
+                      {event.flyer_image ? (
+                        <img
+                          src={event.flyer_image.startsWith('data:') ? event.flyer_image : event.flyer_image}
+                          alt={event.event_name}
+                          className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-32 bg-gradient-to-br from-purple-600/30 to-blue-600/30 flex items-center justify-center">
+                          <Calendar className="w-12 h-12 text-purple-300" />
+                        </div>
+                      )}
+                      <div className="p-3">
+                        <h3 className="text-sm font-semibold mb-1 truncate">{event.event_name}</h3>
+                        <div className="flex items-center space-x-1 text-gray-400 mb-2">
+                          <Clock className="w-3 h-3" />
+                          <span className="text-xs">{formattedDate}</span>
+                        </div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-semibold text-purple-400">
+                            {event.regular_price || event.vip_price || event.vvip_price || '0.0'} AVAX
+                          </span>
+                        </div>
+                        {event.venue && (
+                          <div className="text-xs text-gray-400 truncate">
+                            📍 {event.venue}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Features Section - Compact */}
+      <section className="py-8 px-4 relative">
+        <div className="max-w-6xl mx-auto grid grid-cols-3 gap-4">
           {features.map((feature, index) => (
             <AnimatedCard
               key={index}
-              delay={index * 200}
+              delay={index * 100}
               isSelected={selectedFeature === index}
               onClick={() => setSelectedFeature(index)}
             >
               <div className={`relative group-hover:scale-105 transition-transform duration-300`}>
-                <div className={`w-16 h-16 mb-6 rounded-xl bg-${feature.color}
-                  flex items-center justify-center transform group-hover:rotate-12 transition-all duration-500`}>
-                  {feature.icon}
+                <div className={`w-10 h-10 mb-3 rounded-lg bg-${feature.color}
+                  flex items-center justify-center transform group-hover:rotate-12 transition-all duration-300`}>
+                  <div className="w-5 h-5">{feature.icon}</div>
                 </div>
-                <h3 className="text-xl font-semibold mb-4 text-white">{feature.title}</h3>
-                <p className="text-gray-400 group-hover:text-gray-300 transition-colors">
+                <h3 className="text-sm font-semibold mb-2 text-white">{feature.title}</h3>
+                <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">
                   {feature.description}
                 </p>
               </div>
             </AnimatedCard>
           ))}
         </div>
-      
-      
       </section>
 
-      {/* Interactive Stats with Hover Effects */}
-      <section className="py-20 px-6 relative">
-      <div className="max-w-7xl mx-auto grid grid-cols-4 gap-8">
-          {[ 
-            { value: "100K+", label: "Active Users", icon: <Users />, color: "purple" },
-            { value: "50K+", label: "Events Hosted", icon: <Calendar />, color: "blue" },
-            { value: "1M+", label: "Tickets Sold", icon: <Ticket />, color: "purple" },
-            { value: "99%", label: "Security  Assurance", icon: <Star />, color: "blue" }
+      {/* Interactive Stats - Compact */}
+      <section className="py-8 px-4 relative">
+        <div className="max-w-6xl mx-auto grid grid-cols-4 gap-4">
+          {[
+            { value: "100K+", label: "Active Users", icon: <Users className="w-4 h-4" />, color: "purple" },
+            { value: "50K+", label: "Events Hosted", icon: <Calendar className="w-4 h-4" />, color: "blue" },
+            { value: "1M+", label: "Tickets Sold", icon: <Ticket className="w-4 h-4" />, color: "purple" },
+            { value: "99%", label: "Security Assurance", icon: <Star className="w-4 h-4" />, color: "blue" }
           ].map((stat, index) => (
             <div
               key={index}
@@ -453,20 +597,20 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               onMouseLeave={() => setActiveStat(null)}
             >
               <div className={`absolute inset-0 bg-${stat.color}-500/20
-                rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300`} />
-              <div className="relative bg-black/40 backdrop-blur-xl rounded-xl border border-purple-500/30 
-                group-hover:border-purple-500/50 p-6 transform group-hover:translate-y-[-8px] 
+                rounded-lg blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300`} />
+              <div className="relative bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30 
+                group-hover:border-purple-500/50 p-3 transform group-hover:translate-y-[-4px] 
                 transition-all duration-300">
                 <div className="flex flex-col items-center">
-                  <div className={`w-16 h-16 rounded-full bg-${stat.color}-500/20 
-                    flex items-center justify-center mb-4 transform group-hover:scale-110 
-                    group-hover:rotate-12 transition-all duration-500`}>
+                  <div className={`w-8 h-8 rounded-full bg-${stat.color}-500/20 
+                    flex items-center justify-center mb-2 transform group-hover:scale-110 
+                    group-hover:rotate-12 transition-all duration-300`}>
                     {stat.icon}
                   </div>
-                  <div className={`text-4xl font-bold text-${stat.color}-400 mb-2`}>
+                  <div className={`text-lg font-bold text-${stat.color}-400 mb-1`}>
                     {stat.value}
                   </div>
-                  <div className="text-gray-400 group-hover:text-gray-300 transition-colors">
+                  <div className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors text-center">
                     {stat.label}
                   </div>
                 </div>
@@ -474,28 +618,27 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
             </div>
           ))}
         </div>
-      
       </section>
-      <section>
+      <section className="py-8">
         <div>
           <Chatbit />
         </div>
       </section>
-      <section>
+      {/* <section className="py-8">
         <div>
           <Testimonials />
         </div>
       </section>
-      <section>
+      <section className="py-8">
         <div>
           <Discover />
         </div>
       </section>
-      <section>
+      <section className="py-8">
         <div>
           <Teams />
         </div>
-      </section>
+      </section> */}
       {/* Footer section removed to fix duplicate footer issue */}
     </div>
   );
