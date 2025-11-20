@@ -3,6 +3,8 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import chatbotRouter from './routes/chatbot.js';
+import eventsRouter from './routes/events.js';
+import { initDatabase } from './utils/database.js';
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
@@ -14,19 +16,30 @@ const PORT = process.env.PORT || 8080;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increased limit for image data
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Initialize database
+try {
+  initDatabase();
+} catch (error) {
+  console.error('Failed to initialize database:', error);
+  process.exit(1);
+}
 
 // Routes
 app.use('/api/chatbot', chatbotRouter);
+app.use('/api/events', eventsRouter);
 
 // Basic health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'EventVax Chatbot API is running' });
+  res.status(200).json({ status: 'OK', message: 'EventVax API is running' });
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-  console.log(`Chatbot API: http://localhost:${PORT}/api/chatbot`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  console.log(`💬 Chatbot API: http://localhost:${PORT}/api/chatbot`);
+  console.log(`🎫 Events API: http://localhost:${PORT}/api/events`);
 });
