@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Ticket, Sparkles, Wallet, Plus, DollarSign, Users, Clock, Star, Zap } from "lucide-react";
 
 const QuantumEventCreator = () => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [formData, setFormData] = useState({
@@ -98,13 +100,75 @@ const QuantumEventCreator = () => {
     setUploadError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Event Created:', formData);
-    if (eventFlyer) {
-      console.log('Event flyer:', eventFlyer.name);
+
+    try {
+      // Convert image to base64 if present
+      let flyerImageBase64 = null;
+      if (eventFlyer) {
+        flyerImageBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(eventFlyer);
+        });
+      }
+
+      // Prepare event data
+      const eventData = {
+        eventName: formData.eventName,
+        eventDate: formData.eventDate,
+        venue: formData.venue,
+        regularPrice: formData.regularPrice,
+        vipPrice: formData.vipPrice,
+        vvipPrice: formData.vvipPrice,
+        description: formData.description,
+        flyerImage: flyerImageBase64,
+        creatorAddress: null // Will be set when wallet is connected
+      };
+
+      // Send to backend API
+      const response = await fetch('http://localhost:8080/api/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`✅ Event created successfully! Event ID: ${result.eventId}`);
+        console.log('Event saved to database:', result.data);
+
+        // Reset form
+        setFormData({
+          eventName: '',
+          eventDate: '',
+          venue: '',
+          regularPrice: '',
+          vipPrice: '',
+          vvipPrice: '',
+          description: ''
+        });
+        setEventFlyer(null);
+        setFlyerPreview(null);
+        setUploadError('');
+
+        // Redirect to home page after a short delay
+        setTimeout(() => {
+          navigate('/');
+        }, 1500);
+      } else {
+        alert(`❌ Failed to create event: ${result.error}`);
+        console.error('Error:', result);
+      }
+    } catch (error) {
+      console.error('Error creating event:', error);
+      alert('❌ Failed to create event. Please check console for details.');
     }
-    // Handle event creation logic here
   };
 
   const FloatingParticle = ({ delay = 0 }) => (
@@ -347,8 +411,8 @@ const QuantumEventCreator = () => {
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                     className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 cursor-pointer ${isDragging
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-gray-700 hover:border-purple-500/50 hover:bg-gray-800/30'
+                      ? 'border-purple-500 bg-purple-500/10'
+                      : 'border-gray-700 hover:border-purple-500/50 hover:bg-gray-800/30'
                       }`}
                   >
                     <input

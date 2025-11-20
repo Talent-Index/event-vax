@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Moon, Ticket, Calendar, Users, TrendingUp, ChevronRight, Star, Zap, Activity, Globe, Power, Clock, ArrowRight, Plus } from 'lucide-react';
-import bitcoinImage from "../assets/EventVerse Tickets.jpg"; 
+import bitcoinImage from "../assets/EventVerse Tickets.jpg";
 import Chatbit from './Chatbit';
 import Testimonials from './Testimonials';
 import Discover from './Discover';
@@ -24,17 +24,17 @@ const AVALANCHE_MAINNET_PARAMS = {
 
 const addAvalancheNetwork = async () => {
   if (typeof window.ethereum !== "undefined") {
-      try {
-          await window.ethereum.request({
-              method: "wallet_addEthereumChain",
-              params: [AVALANCHE_MAINNET_PARAMS],
-          });
-          console.log("Avalanche network added successfully!");
-      } catch (error) {
-          console.error("Error adding Avalanche network:", error);
-      }
+    try {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [AVALANCHE_MAINNET_PARAMS],
+      });
+      console.log("Avalanche network added successfully!");
+    } catch (error) {
+      console.error("Error adding Avalanche network:", error);
+    }
   } else {
-      console.error("MetaMask is not installed.");
+    console.error("MetaMask is not installed.");
   }
 };
 
@@ -62,7 +62,7 @@ const ParticleField = () => {
 
 const AnimatedCard = ({ children, delay, onClick, isSelected }) => {
   const [isHovered, setIsHovered] = useState(false);
-  
+
   return (
     <div
       className={`relative group transition-all duration-300 transform 
@@ -93,6 +93,8 @@ const UltimateEventPlatform = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
   const [activeEventFilter, setActiveEventFilter] = useState('all');
+  const [events, setEvents] = useState([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
 
   useEffect(() => {
     setIsVisible(true);
@@ -104,8 +106,30 @@ const UltimateEventPlatform = () => {
   }, []);
 
   useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      setIsLoadingEvents(true);
+      const response = await fetch('http://localhost:8080/api/events');
+      const result = await response.json();
+
+      if (result.success) {
+        setEvents(result.data);
+      } else {
+        console.error('Failed to fetch events:', result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setIsLoadingEvents(false);
+    }
+  };
+
+  useEffect(() => {
     checkWalletConnection();
-    
+
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('disconnect', handleDisconnect);
@@ -207,7 +231,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
       });
-      
+
       if (accounts.length === 0) {
         throw new Error("No accounts found");
       }
@@ -239,22 +263,22 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
 
       // Step 3: Request signature for authentication
       const message = generateSignMessage(address);
-      
+
       try {
         const signature = await signer.signMessage(message);
         console.log("Signature successful:", signature);
-        
+
         // Store authentication status
         localStorage.setItem(`authenticated_${address}`, JSON.stringify({
           timestamp: Date.now(),
           signature: signature
         }));
-        
+
         setWalletAddress(address);
         setIsAuthenticated(true);
         setShowSignInPrompt(false);
         console.log("Connected and authenticated:", address);
-        
+
       } catch (signError) {
         if (signError.code === 4001) {
           throw new Error("Signature rejected by user");
@@ -262,7 +286,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
           throw new Error("Failed to sign message: " + signError.message);
         }
       }
-      
+
     } catch (error) {
       console.error("Error connecting to wallet:", error);
       alert(error.message || "Failed to connect wallet");
@@ -290,9 +314,9 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
       <ParticleField />
-      
+
       {/* Dynamic Cursor Effect */}
-      <div 
+      <div
         className="fixed w-64 h-64 pointer-events-none z-50 transition-transform duration-100"
         style={{
           transform: `translate(${mousePosition.x - 128}px, ${mousePosition.y - 128}px)`,
@@ -353,14 +377,14 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                 </span>
               </div>
             </h1>
-            
+
             <p className="text-base text-gray-300 mb-6 opacity-0 animate-fade-in delay-700">
               Step into a world where events transcend reality. Experience seamless ticketing,
               immersive venues, and next-generation event management.
             </p>
 
             <div className="flex space-x-4">
-              <button 
+              <button
                 onClick={() => handleProtectedNavigation('/Myevent')}
                 className="group relative px-4 py-2 text-sm rounded-lg overflow-hidden"
               >
@@ -375,7 +399,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                 </div>
               </button>
 
-              <button 
+              <button
                 onClick={() => handleProtectedNavigation('/ticket')}
                 className="group relative px-4 py-2 text-sm rounded-lg overflow-hidden"
               >
@@ -401,7 +425,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                   }}
                 />
               ))}
-              <img 
+              <img
                 src={bitcoinImage}
                 alt="VR Experience"
                 className="relative z-10 w-full h-full object-cover rounded-2xl transform 
@@ -420,7 +444,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               Discover Amazing Events
             </h2>
             <p className="text-sm text-gray-400">Secure, transparent, and efficient event ticketing powered by Avalanche blockchain</p>
-            
+
             {/* Filter Tags */}
             <div className="flex justify-center space-x-2 mt-6">
               {['all', 'upcoming', 'ongoing', 'past'].map((filter) => (
@@ -428,8 +452,8 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                   key={filter}
                   onClick={() => setActiveEventFilter(filter)}
                   className={`px-4 py-2 text-sm rounded-full transition-all duration-300 capitalize
-                    ${activeEventFilter === filter 
-                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25' 
+                    ${activeEventFilter === filter
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25'
                       : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-white'
                     }`}
                 >
@@ -439,84 +463,96 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              {
-                id: 1,
-                name: "Blockchain Summit 2025",
-                date: "March 15, 2025",
-                price: "0.5 AVAX",
-                available: 150,
-                total: 500,
-                image: "/src/assets/imag.png"
-              },
-              {
-                id: 2,
-                name: "Web3 Music Festival",
-                date: "April 20, 2025",
-                price: "1.2 AVAX",
-                available: 75,
-                total: 1000,
-                image: "/src/assets/dr.png"
-              },
-              {
-                id: 3,
-                name: "NFT Art Exhibition",
-                date: "May 5, 2025",
-                price: "0.8 AVAX",
-                available: 200,
-                total: 300,
-                image: "/src/assets/im.png"
-              },
-              {
-                id: 4,
-                name: "DeFi Conference",
-                date: "June 10, 2025",
-                price: "0.3 AVAX",
-                available: 300,
-                total: 400,
-                image: "/src/assets/rb.png"
-              }
-            ].map((event, index) => (
-              <div
-                onClick={() => handleProtectedNavigation('/mint')}
-                key={event.id}
-                className="group relative transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
-                style={{ transitionDelay: `${index * 50}ms` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300" />
-                <div className="relative bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30 overflow-hidden">
-                  <img 
-                    src={event.image} 
-                    alt={event.name}
-                    className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                  <div className="p-3">
-                    <h3 className="text-sm font-semibold mb-1 truncate">{event.name}</h3>
-                    <div className="flex items-center space-x-1 text-gray-400 mb-2">
-                      <Clock className="w-3 h-3" />
-                      <span className="text-xs">{event.date}</span>
-                    </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-semibold text-purple-400">{event.price}</span>
-                    </div>
-                    <div className="bg-purple-900/20 rounded p-2">
-                      <div className="flex justify-between text-xs text-gray-400 mb-1">
-                        <span>{event.available}</span>
-                        <span>{event.total}</span>
-                      </div>
-                      <div className="h-1 bg-purple-900/40 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
-                          style={{ width: `${(event.available / event.total) * 100}%` }}
+          {isLoadingEvents ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="text-purple-400">Loading events...</div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {(events.length > 0 ? events : [
+                {
+                  id: 1,
+                  event_name: "Blockchain Summit 2025",
+                  event_date: "2025-03-15T10:00",
+                  regular_price: "0.5",
+                  venue: "Convention Center",
+                  flyer_image: "/src/assets/imag.png"
+                },
+                {
+                  id: 2,
+                  event_name: "Web3 Music Festival",
+                  event_date: "2025-04-20T18:00",
+                  regular_price: "1.2",
+                  venue: "Open Air Arena",
+                  flyer_image: "/src/assets/dr.png"
+                },
+                {
+                  id: 3,
+                  event_name: "NFT Art Exhibition",
+                  event_date: "2025-05-05T14:00",
+                  regular_price: "0.8",
+                  venue: "Art Gallery",
+                  flyer_image: "/src/assets/im.png"
+                },
+                {
+                  id: 4,
+                  event_name: "DeFi Conference",
+                  event_date: "2025-06-10T09:00",
+                  regular_price: "0.3",
+                  venue: "Tech Hub",
+                  flyer_image: "/src/assets/rb.png"
+                }
+              ]).map((event, index) => {
+                const eventDate = new Date(event.event_date);
+                const formattedDate = eventDate.toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric'
+                });
+
+                return (
+                  <div
+                    onClick={() => handleProtectedNavigation('/mint')}
+                    key={event.id}
+                    className="group relative transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 cursor-pointer"
+                    style={{ transitionDelay: `${index * 50}ms` }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                    <div className="relative bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30 overflow-hidden">
+                      {event.flyer_image ? (
+                        <img
+                          src={event.flyer_image.startsWith('data:') ? event.flyer_image : event.flyer_image}
+                          alt={event.event_name}
+                          className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-300"
                         />
+                      ) : (
+                        <div className="w-full h-32 bg-gradient-to-br from-purple-600/30 to-blue-600/30 flex items-center justify-center">
+                          <Calendar className="w-12 h-12 text-purple-300" />
+                        </div>
+                      )}
+                      <div className="p-3">
+                        <h3 className="text-sm font-semibold mb-1 truncate">{event.event_name}</h3>
+                        <div className="flex items-center space-x-1 text-gray-400 mb-2">
+                          <Clock className="w-3 h-3" />
+                          <span className="text-xs">{formattedDate}</span>
+                        </div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-semibold text-purple-400">
+                            {event.regular_price || event.vip_price || event.vvip_price || '0.0'} AVAX
+                          </span>
+                        </div>
+                        {event.venue && (
+                          <div className="text-xs text-gray-400 truncate">
+                            📍 {event.venue}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
@@ -548,7 +584,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
       {/* Interactive Stats - Compact */}
       <section className="py-8 px-4 relative">
         <div className="max-w-6xl mx-auto grid grid-cols-4 gap-4">
-          {[ 
+          {[
             { value: "100K+", label: "Active Users", icon: <Users className="w-4 h-4" />, color: "purple" },
             { value: "50K+", label: "Events Hosted", icon: <Calendar className="w-4 h-4" />, color: "blue" },
             { value: "1M+", label: "Tickets Sold", icon: <Ticket className="w-4 h-4" />, color: "purple" },
