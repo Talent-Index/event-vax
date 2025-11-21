@@ -512,7 +512,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
 
                 return (
                   <div
-                    onClick={() => handleProtectedNavigation('/mint')}
+                    onClick={() => handleProtectedNavigation(`/mint?eventId=${event.id}`)}
                     key={event.id}
                     className="group relative transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 cursor-pointer"
                     style={{ transitionDelay: `${index * 50}ms` }}
