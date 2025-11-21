@@ -31,6 +31,7 @@ const QuantumMintNFT = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [eventData, setEventData] = useState(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
+  const [selectedTicketType, setSelectedTicketType] = useState('regular');
 
   useEffect(() => {
     fetchEventData();
@@ -51,15 +52,16 @@ const QuantumMintNFT = () => {
       if (result.success) {
         const event = result.data;
         const formattedEventData = {
-          name: `${event.event_name} - VIP Ticket`,
-          description: event.description || `Official VIP access ticket for ${event.event_name}. This NFT grants exclusive access to all VIP areas, networking sessions, and premium content.`,
+          name: event.event_name,
+          description: event.description || `Official access ticket for ${event.event_name}. This NFT grants exclusive access to the event.`,
           image: event.flyer_image || "ipfs://QmPreUploadedEventImage",
-          attributes: [
-            { trait_type: "Event", value: event.event_name },
-            { trait_type: "Ticket Type", value: "VIP" },
-            { trait_type: "Date", value: new Date(event.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) },
-            { trait_type: "Venue", value: event.venue }
-          ],
+          date: new Date(event.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+          venue: event.venue,
+          ticketPrices: {
+            regular: event.regular_price || '0',
+            vip: event.vip_price || '0',
+            vvip: event.vvip_price || '0'
+          },
           rawData: event
         };
         setEventData(formattedEventData);
@@ -72,6 +74,31 @@ const QuantumMintNFT = () => {
     } finally {
       setLoadingEvent(false);
     }
+  };
+
+  const getCurrentTicketDetails = () => {
+    if (!eventData) return null;
+
+    const ticketTypes = {
+      regular: { label: 'Regular', price: eventData.ticketPrices.regular },
+      vip: { label: 'VIP', price: eventData.ticketPrices.vip },
+      vvip: { label: 'VVIP', price: eventData.ticketPrices.vvip }
+    };
+
+    const selected = ticketTypes[selectedTicketType];
+
+    return {
+      name: `${eventData.name} - ${selected.label} Ticket`,
+      description: eventData.description,
+      image: eventData.image,
+      attributes: [
+        { trait_type: "Event", value: eventData.name },
+        { trait_type: "Ticket Type", value: selected.label },
+        { trait_type: "Price", value: `${selected.price} AVAX` },
+        { trait_type: "Date", value: eventData.date },
+        { trait_type: "Venue", value: eventData.venue }
+      ]
+    };
   };
 
   useEffect(() => {
@@ -148,10 +175,11 @@ const QuantumMintNFT = () => {
       setMintingStatus('Generating ticket metadata...');
       setCurrentStep(3);
 
+      const currentTicket = getCurrentTicketDetails();
       const ticketMetadata = {
-        ...eventData,
+        ...currentTicket,
         attributes: [
-          ...eventData.attributes,
+          ...currentTicket.attributes,
           { trait_type: "Owner", value: walletAddress },
           { trait_type: "Mint Date", value: new Date().toISOString() },
           { trait_type: "Ticket ID", value: `TICKET-${Date.now()}` }
@@ -228,18 +256,19 @@ const QuantumMintNFT = () => {
 
       await new Promise(resolve => setTimeout(resolve, 3000));
 
+      const currentTicket = getCurrentTicketDetails();
       const mintedTicket = {
-        eventName: eventData.name,
-        eventDate: eventData.attributes.find(attr => attr.trait_type === "Date")?.value || "March 15, 2025",
+        eventName: currentTicket.name,
+        eventDate: currentTicket.attributes.find(attr => attr.trait_type === "Date")?.value || eventData.date,
         eventTime: "2:00 PM - 10:00 PM",
-        venue: eventData.attributes.find(attr => attr.trait_type === "Venue")?.value || "Convention Center",
+        venue: currentTicket.attributes.find(attr => attr.trait_type === "Venue")?.value || eventData.venue,
         address: "123 Convention Ave, New York, NY 10001",
-        ticketType: eventData.attributes.find(attr => attr.trait_type === "Ticket Type")?.value || "VIP Access",
-        seatNumber: `VIP-${Math.floor(Math.random() * 1000)}`,
-        price: "0.08 AVAX",
+        ticketType: currentTicket.attributes.find(attr => attr.trait_type === "Ticket Type")?.value || "Regular",
+        seatNumber: `${selectedTicketType.toUpperCase()}-${Math.floor(Math.random() * 1000)}`,
+        price: currentTicket.attributes.find(attr => attr.trait_type === "Price")?.value || "0 AVAX",
         qrCode: `QR${Math.random().toString(36).substring(2, 15)}`,
         status: "Valid",
-        description: eventData.description,
+        description: currentTicket.description,
         mintDate: new Date().toISOString(),
         tokenURI: tokenURI,
         tokenId: `TICKET-${Date.now()}`
@@ -425,6 +454,85 @@ const QuantumMintNFT = () => {
                 </div>
               ) : (
                 <>
+                  {/* Ticket Type Selection */}
+                  <div className="mb-8">
+                    <div className="flex items-center mb-4">
+                      <Ticket className="w-6 h-6 mr-2 text-purple-400" />
+                      <h3 className="text-2xl font-bold">Select Ticket Type</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Regular Ticket */}
+                      <button
+                        onClick={() => setSelectedTicketType('regular')}
+                        className={`relative p-6 rounded-xl border-2 transition-all duration-300 text-left
+                          ${selectedTicketType === 'regular'
+                            ? 'border-green-500 bg-green-500/10'
+                            : 'border-gray-700 bg-gray-800/50 hover:border-green-500/50'}`}
+                      >
+                        {selectedTicketType === 'regular' && (
+                          <div className="absolute top-3 right-3">
+                            <CheckCircle className="w-6 h-6 text-green-500" />
+                          </div>
+                        )}
+                        <div className="flex items-center mb-2">
+                          <Ticket className="w-5 h-5 text-green-400 mr-2" />
+                          <h4 className="text-lg font-bold text-white">Regular</h4>
+                        </div>
+                        <p className="text-2xl font-bold text-green-400 mb-2">
+                          {eventData.ticketPrices.regular} AVAX
+                        </p>
+                        <p className="text-sm text-gray-400">Standard event access</p>
+                      </button>
+
+                      {/* VIP Ticket */}
+                      <button
+                        onClick={() => setSelectedTicketType('vip')}
+                        className={`relative p-6 rounded-xl border-2 transition-all duration-300 text-left
+                          ${selectedTicketType === 'vip'
+                            ? 'border-blue-500 bg-blue-500/10'
+                            : 'border-gray-700 bg-gray-800/50 hover:border-blue-500/50'}`}
+                      >
+                        {selectedTicketType === 'vip' && (
+                          <div className="absolute top-3 right-3">
+                            <CheckCircle className="w-6 h-6 text-blue-500" />
+                          </div>
+                        )}
+                        <div className="flex items-center mb-2">
+                          <Star className="w-5 h-5 text-blue-400 mr-2" />
+                          <h4 className="text-lg font-bold text-white">VIP</h4>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-400 mb-2">
+                          {eventData.ticketPrices.vip} AVAX
+                        </p>
+                        <p className="text-sm text-gray-400">Premium access & perks</p>
+                      </button>
+
+                      {/* VVIP Ticket */}
+                      <button
+                        onClick={() => setSelectedTicketType('vvip')}
+                        className={`relative p-6 rounded-xl border-2 transition-all duration-300 text-left
+                          ${selectedTicketType === 'vvip'
+                            ? 'border-purple-500 bg-purple-500/10'
+                            : 'border-gray-700 bg-gray-800/50 hover:border-purple-500/50'}`}
+                      >
+                        {selectedTicketType === 'vvip' && (
+                          <div className="absolute top-3 right-3">
+                            <CheckCircle className="w-6 h-6 text-purple-500" />
+                          </div>
+                        )}
+                        <div className="flex items-center mb-2">
+                          <Sparkles className="w-5 h-5 text-purple-400 mr-2" />
+                          <h4 className="text-lg font-bold text-white">VVIP</h4>
+                        </div>
+                        <p className="text-2xl font-bold text-purple-400 mb-2">
+                          {eventData.ticketPrices.vvip} AVAX
+                        </p>
+                        <p className="text-sm text-gray-400">Exclusive VIP experience</p>
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Ticket Preview */}
                   <div className="mb-8">
                     <div className="flex items-center mb-6">
@@ -435,13 +543,13 @@ const QuantumMintNFT = () => {
                     <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl p-6 border border-gray-700/50">
                       {/* Event Header */}
                       <div className="mb-6 pb-6 border-b border-gray-700">
-                        <h4 className="text-2xl font-bold text-white mb-2">{eventData.name}</h4>
-                        <p className="text-gray-400">{eventData.description}</p>
+                        <h4 className="text-2xl font-bold text-white mb-2">{getCurrentTicketDetails()?.name}</h4>
+                        <p className="text-gray-400">{getCurrentTicketDetails()?.description}</p>
                       </div>
 
                       {/* Attributes Grid */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {eventData.attributes.map((attr, index) => (
+                        {getCurrentTicketDetails()?.attributes.map((attr, index) => (
                           <div key={index} className="bg-gray-700/50 p-4 rounded-lg hover:bg-gray-700 transition-colors">
                             <div className="flex items-center mb-2">
                               {attr.trait_type === "Date" && <Calendar className="w-4 h-4 text-blue-400 mr-1" />}
