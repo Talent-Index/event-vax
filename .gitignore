@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 *.env
 *.amazonq
+FEATURE_GUIDE.md
+IMPLEMENTATION_SUMMARY.md
