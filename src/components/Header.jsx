@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Power } from 'lucide-react';
+import { Power, User } from 'lucide-react';
 import { ethers } from 'ethers';
 
 // Avalanche Network Configuration
@@ -125,7 +125,22 @@ const Header = () => {
                     group-hover:w-full group-hover:left-0 transition-all duration-200" />
                 </Link>
               ))}
-              <button 
+              {walletAddress && (
+                <Link
+                  to="/profile"
+                  className="relative group py-1"
+                >
+                  <div className="flex items-center space-x-1">
+                    <User className="w-4 h-4 text-gray-300 group-hover:text-white transition-colors" />
+                    <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
+                      Profile
+                    </span>
+                  </div>
+                  <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-500 \
+                    group-hover:w-full group-hover:left-0 transition-all duration-200" />
+                </Link>
+              )}
+              <button
                 onClick={walletAddress ? disconnectWallet : connectWallet}
                 disabled={isConnecting}
                 className="relative px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 \
