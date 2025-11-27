@@ -17,6 +17,8 @@ import Ticket from './pages/Ticket';
 import Teams from './pages/Teams';
 import Layout from './Layout';
 import Myevent from './pages/Myevent';
+import Profile from './pages/Profile';
+import EventDashboard from './pages/EventDashboard';
 import './index.css';
 import WaitlistPage from './pages/WaitingList';
 import QuantumTicketResale from './pages/QuantamTicketResale';
@@ -81,6 +83,16 @@ const router = createBrowserRouter([
   {
     path: "resell",
     element: <Layout><QuantumTicketResale /></Layout>
+  },
+
+  {
+    path: "profile",
+    element: <Layout><Profile /></Layout>
+  },
+
+  {
+    path: "event-dashboard/:eventId",
+    element: <Layout><EventDashboard /></Layout>
   },
 
   {
