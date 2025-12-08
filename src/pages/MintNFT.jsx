@@ -360,23 +360,23 @@ const QuantumMintNFT = () => {
         </div>
       </nav> */}
 
-      <main className="relative container mx-auto px-4 py-24 max-w-5xl">
+      <main className="relative container mx-auto px-4 py-20 sm:py-24 max-w-7xl">
         {/* Header */}
-        <div className="text-center mb-12" style={{ transform: `translateY(${scrollPosition * 0.3}px)` }}>
-          <h1 className="text-6xl font-bold mb-6 relative inline-block">
+        <div className="text-center mb-10 sm:mb-12" style={{ transform: `translateY(${scrollPosition * 0.3}px)` }}>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 relative inline-block">
             <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 
                          bg-clip-text text-transparent animate-gradient-x">
               Mint Your Quantum Ticket
             </span>
-            <Sparkles className="absolute -right-8 top-0 w-6 h-6 text-yellow-400 animate-bounce" />
+            <Sparkles className="absolute -right-6 sm:-right-8 top-0 w-5 h-5 sm:w-6 sm:h-6 text-yellow-400 animate-bounce" />
           </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-400 max-w-2xl mx-auto px-4">
             Create your exclusive NFT ticket on the blockchain
           </p>
         </div>
 
         {/* Progress Steps */}
-        <div className="mb-12">
+        <div className="mb-8 sm:mb-10">
           <div className="flex justify-between items-center max-w-3xl mx-auto">
             {[
               { num: 1, label: 'Connect', icon: Wallet },
@@ -385,17 +385,17 @@ const QuantumMintNFT = () => {
               { num: 4, label: 'Mint', icon: Ticket }
             ].map(({ num, label, icon: Icon }) => (
               <div key={num} className="flex flex-col items-center flex-1">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-500
                               ${currentStep >= num
                     ? 'bg-gradient-to-r from-purple-600 to-blue-600 scale-110'
                     : 'bg-gray-800 border border-gray-700'}`}>
                   {currentStep > num ? (
-                    <CheckCircle className="w-6 h-6 text-white" />
+                    <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   ) : (
-                    <Icon className={`w-6 h-6 ${currentStep >= num ? 'text-white' : 'text-gray-500'}`} />
+                    <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${currentStep >= num ? 'text-white' : 'text-gray-500'}`} />
                   )}
                 </div>
-                <p className={`text-sm mt-2 ${currentStep >= num ? 'text-purple-400' : 'text-gray-500'}`}>
+                <p className={`text-xs sm:text-sm mt-2 ${currentStep >= num ? 'text-purple-400' : 'text-gray-500'}`}>
                   {label}
                 </p>
               </div>
@@ -404,21 +404,21 @@ const QuantumMintNFT = () => {
         </div>
 
         {/* Main Content Card */}
-        <div className="bg-gray-900/30 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-8 
-                      hover:border-purple-500/50 transition-all duration-300 mb-8">
+        <div className="bg-gray-900/30 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-4 sm:p-6 lg:p-8 
+                      hover:border-purple-500/50 transition-all duration-300 mb-6 sm:mb-8">
 
           {/* Loading Event Data */}
           {loadingEvent ? (
-            <div className="text-center py-12">
-              <Loader2 className="w-12 h-12 text-purple-400 animate-spin mx-auto mb-4" />
-              <p className="text-gray-400">Loading event details...</p>
+            <div className="text-center py-8 sm:py-12">
+              <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-purple-400 animate-spin mx-auto mb-4" />
+              <p className="text-sm sm:text-base text-gray-400">Loading event details...</p>
             </div>
           ) : !eventData ? (
-            <div className="text-center py-12">
-              <p className="text-red-400 mb-4">Event not found or failed to load</p>
+            <div className="text-center py-8 sm:py-12">
+              <p className="text-sm sm:text-base text-red-400 mb-4">Event not found or failed to load</p>
               <button
                 onClick={() => window.location.href = '/'}
-                className="px-6 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors"
+                className="px-4 sm:px-6 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors text-sm sm:text-base"
               >
                 Back to Events
               </button>
@@ -427,26 +427,26 @@ const QuantumMintNFT = () => {
             <>
               {/* Step 1: Connect Wallet */}
               {!walletAddress ? (
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full 
-                                flex items-center justify-center mx-auto mb-6">
-                    <Wallet className="w-10 h-10 text-purple-400" />
+                <div className="text-center py-8 sm:py-12">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full 
+                                flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                    <Wallet className="w-8 h-8 sm:w-10 sm:h-10 text-purple-400" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-4">Connect Your Wallet</h3>
-                  <p className="text-gray-400 mb-8">Connect your wallet to start minting your NFT ticket</p>
+                  <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Connect Your Wallet</h3>
+                  <p className="text-sm sm:text-base text-gray-400 mb-6 sm:mb-8 px-4">Connect your wallet to start minting your NFT ticket</p>
                   <button
                     onClick={connectWallet}
                     disabled={isLoading}
-                    className="group relative px-8 py-4 rounded-xl overflow-hidden transition-all duration-300 hover:scale-105"
+                    className="group relative px-6 sm:px-8 py-3 sm:py-4 rounded-xl overflow-hidden transition-all duration-300 hover:scale-105"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 animate-gradient-x" />
                     <div className="relative z-10 flex items-center space-x-2">
                       {isLoading ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                       ) : (
                         <>
-                          <Wallet className="w-5 h-5" />
-                          <span className="font-semibold">Connect Wallet</span>
+                          <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="font-semibold text-sm sm:text-base">Connect Wallet</span>
                         </>
                       )}
                     </div>
@@ -455,110 +455,110 @@ const QuantumMintNFT = () => {
               ) : (
                 <>
                   {/* Ticket Type Selection */}
-                  <div className="mb-8">
-                    <div className="flex items-center mb-4">
-                      <Ticket className="w-6 h-6 mr-2 text-purple-400" />
-                      <h3 className="text-2xl font-bold">Select Ticket Type</h3>
+                  <div className="mb-6 sm:mb-8">
+                    <div className="flex items-center mb-3 sm:mb-4">
+                      <Ticket className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-purple-400" />
+                      <h3 className="text-xl sm:text-2xl font-bold">Select Ticket Type</h3>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                       {/* Regular Ticket */}
                       <button
                         onClick={() => setSelectedTicketType('regular')}
-                        className={`relative p-6 rounded-xl border-2 transition-all duration-300 text-left
+                        className={`relative p-4 sm:p-6 rounded-xl border-2 transition-all duration-300 text-left hover:scale-105
                           ${selectedTicketType === 'regular'
                             ? 'border-green-500 bg-green-500/10'
                             : 'border-gray-700 bg-gray-800/50 hover:border-green-500/50'}`}
                       >
                         {selectedTicketType === 'regular' && (
-                          <div className="absolute top-3 right-3">
-                            <CheckCircle className="w-6 h-6 text-green-500" />
+                          <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                            <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
                           </div>
                         )}
                         <div className="flex items-center mb-2">
-                          <Ticket className="w-5 h-5 text-green-400 mr-2" />
-                          <h4 className="text-lg font-bold text-white">Regular</h4>
+                          <Ticket className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 mr-2" />
+                          <h4 className="text-base sm:text-lg font-bold text-white">Regular</h4>
                         </div>
-                        <p className="text-2xl font-bold text-green-400 mb-2">
+                        <p className="text-xl sm:text-2xl font-bold text-green-400 mb-1 sm:mb-2">
                           {eventData.ticketPrices.regular} AVAX
                         </p>
-                        <p className="text-sm text-gray-400">Standard event access</p>
+                        <p className="text-xs sm:text-sm text-gray-400">Standard event access</p>
                       </button>
 
                       {/* VIP Ticket */}
                       <button
                         onClick={() => setSelectedTicketType('vip')}
-                        className={`relative p-6 rounded-xl border-2 transition-all duration-300 text-left
+                        className={`relative p-4 sm:p-6 rounded-xl border-2 transition-all duration-300 text-left hover:scale-105
                           ${selectedTicketType === 'vip'
                             ? 'border-blue-500 bg-blue-500/10'
                             : 'border-gray-700 bg-gray-800/50 hover:border-blue-500/50'}`}
                       >
                         {selectedTicketType === 'vip' && (
-                          <div className="absolute top-3 right-3">
-                            <CheckCircle className="w-6 h-6 text-blue-500" />
+                          <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                            <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                           </div>
                         )}
                         <div className="flex items-center mb-2">
-                          <Star className="w-5 h-5 text-blue-400 mr-2" />
-                          <h4 className="text-lg font-bold text-white">VIP</h4>
+                          <Star className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 mr-2" />
+                          <h4 className="text-base sm:text-lg font-bold text-white">VIP</h4>
                         </div>
-                        <p className="text-2xl font-bold text-blue-400 mb-2">
+                        <p className="text-xl sm:text-2xl font-bold text-blue-400 mb-1 sm:mb-2">
                           {eventData.ticketPrices.vip} AVAX
                         </p>
-                        <p className="text-sm text-gray-400">Premium access & perks</p>
+                        <p className="text-xs sm:text-sm text-gray-400">Premium access & perks</p>
                       </button>
 
                       {/* VVIP Ticket */}
                       <button
                         onClick={() => setSelectedTicketType('vvip')}
-                        className={`relative p-6 rounded-xl border-2 transition-all duration-300 text-left
+                        className={`relative p-4 sm:p-6 rounded-xl border-2 transition-all duration-300 text-left hover:scale-105
                           ${selectedTicketType === 'vvip'
                             ? 'border-purple-500 bg-purple-500/10'
                             : 'border-gray-700 bg-gray-800/50 hover:border-purple-500/50'}`}
                       >
                         {selectedTicketType === 'vvip' && (
-                          <div className="absolute top-3 right-3">
-                            <CheckCircle className="w-6 h-6 text-purple-500" />
+                          <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                            <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
                           </div>
                         )}
                         <div className="flex items-center mb-2">
-                          <Sparkles className="w-5 h-5 text-purple-400 mr-2" />
-                          <h4 className="text-lg font-bold text-white">VVIP</h4>
+                          <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 mr-2" />
+                          <h4 className="text-base sm:text-lg font-bold text-white">VVIP</h4>
                         </div>
-                        <p className="text-2xl font-bold text-purple-400 mb-2">
+                        <p className="text-xl sm:text-2xl font-bold text-purple-400 mb-1 sm:mb-2">
                           {eventData.ticketPrices.vvip} AVAX
                         </p>
-                        <p className="text-sm text-gray-400">Exclusive VIP experience</p>
+                        <p className="text-xs sm:text-sm text-gray-400">Exclusive VIP experience</p>
                       </button>
                     </div>
                   </div>
 
                   {/* Ticket Preview */}
-                  <div className="mb-8">
-                    <div className="flex items-center mb-6">
-                      <Eye className="w-6 h-6 mr-2 text-purple-400" />
-                      <h3 className="text-2xl font-bold">Ticket Preview</h3>
+                  <div className="mb-6 sm:mb-8">
+                    <div className="flex items-center mb-3 sm:mb-4">
+                      <Eye className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-purple-400" />
+                      <h3 className="text-xl sm:text-2xl font-bold">Ticket Preview</h3>
                     </div>
 
-                    <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl p-6 border border-gray-700/50">
+                    <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl p-4 sm:p-6 border border-gray-700/50">
                       {/* Event Header */}
-                      <div className="mb-6 pb-6 border-b border-gray-700">
-                        <h4 className="text-2xl font-bold text-white mb-2">{getCurrentTicketDetails()?.name}</h4>
-                        <p className="text-gray-400">{getCurrentTicketDetails()?.description}</p>
+                      <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-gray-700">
+                        <h4 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-2">{getCurrentTicketDetails()?.name}</h4>
+                        <p className="text-xs sm:text-sm text-gray-400">{getCurrentTicketDetails()?.description}</p>
                       </div>
 
                       {/* Attributes Grid */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                         {getCurrentTicketDetails()?.attributes.map((attr, index) => (
-                          <div key={index} className="bg-gray-700/50 p-4 rounded-lg hover:bg-gray-700 transition-colors">
-                            <div className="flex items-center mb-2">
-                              {attr.trait_type === "Date" && <Calendar className="w-4 h-4 text-blue-400 mr-1" />}
-                              {attr.trait_type === "Venue" && <MapPin className="w-4 h-4 text-green-400 mr-1" />}
-                              {attr.trait_type === "Ticket Type" && <Star className="w-4 h-4 text-yellow-400 mr-1" />}
-                              {attr.trait_type === "Event" && <Ticket className="w-4 h-4 text-purple-400 mr-1" />}
+                          <div key={index} className="bg-gray-700/50 p-3 sm:p-4 rounded-lg hover:bg-gray-700 transition-colors">
+                            <div className="flex items-center mb-1 sm:mb-2">
+                              {attr.trait_type === "Date" && <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400 mr-1" />}
+                              {attr.trait_type === "Venue" && <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-green-400 mr-1" />}
+                              {attr.trait_type === "Ticket Type" && <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 mr-1" />}
+                              {attr.trait_type === "Event" && <Ticket className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400 mr-1" />}
                               <p className="text-xs text-gray-400">{attr.trait_type}</p>
                             </div>
-                            <p className="text-sm font-semibold text-white">{attr.value}</p>
+                            <p className="text-xs sm:text-sm font-semibold text-white break-words">{attr.value}</p>
                           </div>
                         ))}
                       </div>
@@ -566,28 +566,28 @@ const QuantumMintNFT = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     <button
                       onClick={generateTokenURI}
                       disabled={isLoading || !walletAddress}
-                      className="w-full group relative px-6 py-4 rounded-xl overflow-hidden transition-all duration-300 hover:scale-105"
+                      className="w-full group relative px-4 sm:px-6 py-3 sm:py-4 rounded-xl overflow-hidden transition-all duration-300 hover:scale-105"
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600" />
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-green-500 to-emerald-500" />
                       <div className="relative z-10 flex items-center justify-center space-x-2">
                         {isLoading && currentStep === 3 ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                         ) : (
-                          <Zap className="w-5 h-5" />
+                          <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
                         )}
-                        <span className="font-semibold">Generate Ticket Metadata</span>
+                        <span className="font-semibold text-sm sm:text-base">Generate Ticket Metadata</span>
                       </div>
                     </button>
 
                     <button
                       onClick={handleMintNFT}
                       disabled={isLoading || !walletAddress || !tokenURI}
-                      className={`w-full group relative px-6 py-4 rounded-xl overflow-hidden transition-all duration-300 
+                      className={`w-full group relative px-4 sm:px-6 py-3 sm:py-4 rounded-xl overflow-hidden transition-all duration-300 
                            ${tokenURI ? 'hover:scale-105' : 'opacity-50 cursor-not-allowed'}`}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 animate-gradient-x" />
@@ -595,12 +595,12 @@ const QuantumMintNFT = () => {
                         style={{ background: 'linear-gradient(45deg, rgba(168,85,247,0.4) 0%, rgba(147,51,234,0.4) 100%)' }} />
                       <div className="relative z-10 flex items-center justify-center space-x-2">
                         {isLoading && currentStep === 4 ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                         ) : (
                           <>
-                            <Ticket className="w-5 h-5" />
-                            <span className="font-bold">Mint NFT Ticket</span>
-                            <Sparkles className="w-5 h-5 animate-pulse" />
+                            <Ticket className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <span className="font-bold text-sm sm:text-base">Mint NFT Ticket</span>
+                            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
                           </>
                         )}
                       </div>
@@ -614,24 +614,24 @@ const QuantumMintNFT = () => {
 
         {/* Status Messages */}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4 animate-pulse">
-            <p className="text-red-400 text-center">{error}</p>
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4 animate-pulse">
+            <p className="text-red-400 text-center text-sm sm:text-base">{error}</p>
           </div>
         )}
 
         {mintingStatus && !error && (
-          <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-4">
-            <p className="text-green-400 text-center">{mintingStatus}</p>
+          <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4">
+            <p className="text-green-400 text-center text-sm sm:text-base">{mintingStatus}</p>
           </div>
         )}
 
         {/* Security Notice */}
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6">
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 sm:p-6">
           <div className="flex items-start space-x-3">
-            <Shield className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
+            <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-blue-400 font-semibold mb-2">Security Notice</h4>
-              <ul className="text-sm text-gray-300 space-y-1">
+              <h4 className="text-blue-400 font-semibold mb-2 text-sm sm:text-base">Security Notice</h4>
+              <ul className="text-xs sm:text-sm text-gray-300 space-y-1">
                 <li>• Your NFT ticket is securely stored on the Avalanche blockchain</li>
                 <li>• Each ticket is unique and cannot be duplicated or forged</li>
                 <li>• Keep your wallet private keys secure at all times</li>
