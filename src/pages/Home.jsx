@@ -361,10 +361,10 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
 
       {/* Hero Section - Compact */}
       <main className="relative pt-16 pb-12 px-4">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-8 items-center">
-          <div className={`transition-all duration-1000 delay-300 
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div className={`transition-all duration-1000 delay-300
             ${isVisible ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}`}>
-            <h1 className="text-4xl font-bold mb-4 leading-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
               <div className="overflow-hidden">
                 <span className="inline-block animate-slide-up-fade">Experience</span>
               </div>
@@ -378,20 +378,20 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               </div>
             </h1>
 
-            <p className="text-base text-gray-300 mb-6 opacity-0 animate-fade-in delay-700">
+            <p className="text-sm sm:text-base text-gray-300 mb-6 opacity-0 animate-fade-in delay-700">
               Step into a world where events transcend reality. Experience seamless ticketing,
               immersive venues, and next-generation event management.
             </p>
 
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 onClick={() => handleProtectedNavigation('/Myevent')}
-                className="group relative px-4 py-2 text-sm rounded-lg overflow-hidden"
+                className="group relative px-4 py-2 text-sm rounded-lg overflow-hidden w-full sm:w-auto"
               >
                 <div className="absolute inset-0 bg-purple-600" />
                 <div className="absolute inset-0 bg-purple-600 blur-xl
                   group-hover:blur-2xl transition-all duration-300" />
-                <div className="relative z-10 flex items-center space-x-2">
+                <div className="relative z-10 flex items-center justify-center space-x-2">
                   <span className="relative text-white font-medium flex items-center space-x-2">
                     <Plus className="w-3 h-3" />
                     <span>Create Event</span>
@@ -401,7 +401,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
 
               <button
                 onClick={() => handleProtectedNavigation('/ticket')}
-                className="group relative px-4 py-2 text-sm rounded-lg overflow-hidden"
+                className="group relative px-4 py-2 text-sm rounded-lg overflow-hidden w-full sm:w-auto"
               >
                 <div className="absolute inset-0 border border-purple-500 rounded-lg" />
                 <div className="absolute inset-0 bg-purple-500/10
@@ -411,9 +411,9 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
             </div>
           </div>
 
-          <div className={`relative transition-all duration-1000 delay-500 
+          <div className={`relative transition-all duration-1000 delay-500
             ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
-            <div className="relative w-full h-64 group">
+            <div className="relative w-full h-48 sm:h-56 md:h-64 group">
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
@@ -428,7 +428,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               <img
                 src={bitcoinImage}
                 alt="VR Experience"
-                className="relative z-10 w-full h-full object-cover rounded-2xl transform 
+                className="relative z-10 w-full h-full object-cover rounded-2xl transform
                   group-hover:scale-105 group-hover:rotate-3 transition-all duration-700"
               />
             </div>
@@ -440,18 +440,18 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
       <section id="events-section" className="py-12 px-4 relative">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
               Discover Amazing Events
             </h2>
-            <p className="text-sm text-gray-400">Secure, transparent, and efficient event ticketing powered by Avalanche blockchain</p>
+            <p className="text-xs sm:text-sm text-gray-400 px-4">Secure, transparent, and efficient event ticketing powered by Avalanche blockchain</p>
 
             {/* Filter Tags */}
-            <div className="flex justify-center space-x-2 mt-6">
+            <div className="flex flex-wrap justify-center gap-2 mt-6">
               {['all', 'upcoming', 'ongoing', 'past'].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setActiveEventFilter(filter)}
-                  className={`px-4 py-2 text-sm rounded-full transition-all duration-300 capitalize
+                  className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition-all duration-300 capitalize
                     ${activeEventFilter === filter
                       ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25'
                       : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-white'
@@ -558,7 +558,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
 
       {/* Features Section - Compact */}
       <section className="py-8 px-4 relative">
-        <div className="max-w-6xl mx-auto grid grid-cols-3 gap-4">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {features.map((feature, index) => (
             <AnimatedCard
               key={index}
@@ -571,8 +571,8 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
                   flex items-center justify-center transform group-hover:rotate-12 transition-all duration-300`}>
                   <div className="w-5 h-5">{feature.icon}</div>
                 </div>
-                <h3 className="text-sm font-semibold mb-2 text-white">{feature.title}</h3>
-                <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">
+                <h3 className="text-sm sm:text-base font-semibold mb-2 text-white">{feature.title}</h3>
+                <p className="text-xs sm:text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
                   {feature.description}
                 </p>
               </div>
@@ -583,7 +583,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
 
       {/* Interactive Stats - Compact */}
       <section className="py-8 px-4 relative">
-        <div className="max-w-6xl mx-auto grid grid-cols-4 gap-4">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
             { value: "100K+", label: "Active Users", icon: <Users className="w-4 h-4" />, color: "purple" },
             { value: "50K+", label: "Events Hosted", icon: <Calendar className="w-4 h-4" />, color: "blue" },
@@ -598,16 +598,16 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
             >
               <div className={`absolute inset-0 bg-${stat.color}-500/20
                 rounded-lg blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300`} />
-              <div className="relative bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30 
-                group-hover:border-purple-500/50 p-3 transform group-hover:translate-y-[-4px] 
+              <div className="relative bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30
+                group-hover:border-purple-500/50 p-3 sm:p-4 transform group-hover:translate-y-[-4px]
                 transition-all duration-300">
                 <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-full bg-${stat.color}-500/20 
-                    flex items-center justify-center mb-2 transform group-hover:scale-110 
+                  <div className={`w-8 h-8 rounded-full bg-${stat.color}-500/20
+                    flex items-center justify-center mb-2 transform group-hover:scale-110
                     group-hover:rotate-12 transition-all duration-300`}>
                     {stat.icon}
                   </div>
-                  <div className={`text-lg font-bold text-${stat.color}-400 mb-1`}>
+                  <div className={`text-base sm:text-lg font-bold text-${stat.color}-400 mb-1`}>
                     {stat.value}
                   </div>
                   <div className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors text-center">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Power, User } from 'lucide-react';
+import { Power, User, Menu, X } from 'lucide-react';
 import { ethers } from 'ethers';
 
 // Avalanche Network Configuration
@@ -20,6 +20,7 @@ const Header = () => {
   const [walletAddress, setWalletAddress] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
@@ -95,8 +96,9 @@ const Header = () => {
       ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
       <div className="relative">
         <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
-        <div className="relative max-w-6xl mx-auto py-2">
+        <div className="relative max-w-6xl mx-auto py-2 px-4">
           <div className="flex items-center justify-between">
+            {/* Logo */}
             <div className="flex items-center space-x-2 group cursor-pointer">
               <div className="relative w-8 h-8">
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg" />
@@ -107,7 +109,9 @@ const Header = () => {
               <span className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r \
                 from-purple-400 to-blue-400">EventVerse</span>
             </div>
-            <div className="flex items-center space-x-4">
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
               {[
                 { name: 'Home', path: '/' },
                 { name: 'List', path: '/waiting' },
@@ -160,7 +164,62 @@ const Header = () => {
                 </div>
               </button>
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 text-gray-300 hover:text-white transition-colors"
+            >
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
+
+          {/* Mobile Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-4 space-y-3">
+              {[
+                { name: 'Home', path: '/' },
+                { name: 'List', path: '/waiting' },
+                { name: 'Mint', path: '/mint' },
+              ].map(({ name, path }) => (
+                <Link
+                  key={name}
+                  to={path}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block py-2 px-4 text-gray-300 hover:text-white hover:bg-purple-600/20 rounded-lg transition-all"
+                >
+                  {name}
+                </Link>
+              ))}
+              {walletAddress && (
+                <Link
+                  to="/profile"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center space-x-2 py-2 px-4 text-gray-300 hover:text-white hover:bg-purple-600/20 rounded-lg transition-all"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Profile</span>
+                </Link>
+              )}
+              <button
+                onClick={() => {
+                  walletAddress ? disconnectWallet() : connectWallet();
+                  setIsMobileMenuOpen(false);
+                }}
+                disabled={isConnecting}
+                className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 \
+                  hover:from-purple-500 hover:to-blue-500 transition-all text-sm text-white"
+              >
+                {isConnecting ? (
+                  'Connecting...'
+                ) : walletAddress ? (
+                  `${walletAddress.slice(0, 4)}...${walletAddress.slice(-3)}`
+                ) : (
+                  'Connect Wallet'
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </nav>
