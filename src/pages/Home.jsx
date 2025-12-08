@@ -405,7 +405,7 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
               >
                 <div className="absolute inset-0 border border-purple-500 rounded-lg" />
                 <div className="absolute inset-0 bg-purple-500/10
-                  transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
+                  transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 z-20 md:z-0" />
                 <span className="relative z-10">Tickets Collection</span>
               </button>
             </div>

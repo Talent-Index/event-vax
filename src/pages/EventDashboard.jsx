@@ -88,34 +88,34 @@ const EventDashboard = () => {
   ];
 
   const StatCard = ({ icon: Icon, label, value, color = 'purple' }) => (
-    <div className="group p-4 bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30 
+    <div className="group p-3 sm:p-4 bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30
       hover:border-purple-500/50 transition-all duration-300 hover:scale-105">
-      <div className="flex items-center space-x-3">
-        <div className={`w-12 h-12 rounded-lg bg-${color}-600/20 flex items-center justify-center
-          group-hover:scale-110 transition-transform`}>
-          <Icon className={`w-6 h-6 text-${color}-400`} />
+      <div className="flex items-center space-x-2 sm:space-x-3">
+        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-${color}-600/20 flex items-center justify-center
+          group-hover:scale-110 transition-transform flex-shrink-0`}>
+          <Icon className={`w-5 h-5 sm:w-6 sm:h-6 text-${color}-400`} />
         </div>
         <div>
           <p className="text-xs text-gray-400">{label}</p>
-          <p className="text-xl font-bold text-white">{value}</p>
+          <p className="text-lg sm:text-xl font-bold text-white">{value}</p>
         </div>
       </div>
     </div>
   );
 
   const GuestRow = ({ guest, showCheckIn = true }) => (
-    <div className="group flex items-center justify-between p-3 bg-black/40 backdrop-blur-xl 
-      rounded-lg border border-purple-500/30 hover:border-purple-500/50 transition-all duration-300">
-      <div className="flex items-center space-x-3 flex-1">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 
-          flex items-center justify-center">
+    <div className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-black/40 backdrop-blur-xl
+      rounded-lg border border-purple-500/30 hover:border-purple-500/50 transition-all duration-300 gap-3">
+      <div className="flex items-center space-x-3 flex-1 w-full sm:w-auto">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-600 to-blue-600
+          flex items-center justify-center flex-shrink-0">
           <span className="text-sm font-bold text-white">{guest.name.charAt(0)}</span>
         </div>
-        <div className="flex-1">
-          <h4 className="text-sm font-semibold text-white">{guest.name}</h4>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-semibold text-white truncate">{guest.name}</h4>
           <div className="flex items-center space-x-2 text-xs text-gray-400">
-            <span className="font-mono">{guest.wallet}</span>
-            <span className={`px-2 py-0.5 rounded-full ${
+            <span className="font-mono truncate">{guest.wallet}</span>
+            <span className={`px-2 py-0.5 rounded-full flex-shrink-0 ${
               guest.ticketType === 'VVIP' ? 'bg-yellow-500/20 text-yellow-400' :
               guest.ticketType === 'VIP' ? 'bg-blue-500/20 text-blue-400' :
               'bg-green-500/20 text-green-400'
@@ -128,8 +128,8 @@ const EventDashboard = () => {
       {showCheckIn && !guest.checkedIn && (
         <button
           onClick={() => handleCheckIn(guest.id)}
-          className="px-4 py-2 rounded-lg bg-green-600/20 hover:bg-green-600/30 border 
-            border-green-500/30 text-sm text-green-400 flex items-center space-x-2 
+          className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg bg-green-600/20 hover:bg-green-600/30 border
+            border-green-500/30 text-xs sm:text-sm text-green-400 flex items-center justify-center space-x-2
             transition-all duration-300"
         >
           <UserCheck className="w-4 h-4" />
@@ -139,8 +139,8 @@ const EventDashboard = () => {
       {!showCheckIn && guest.checkedIn && (
         <button
           onClick={() => handleCheckOut(guest.id)}
-          className="px-4 py-2 rounded-lg bg-red-600/20 hover:bg-red-600/30 border 
-            border-red-500/30 text-sm text-red-400 flex items-center space-x-2 
+          className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg bg-red-600/20 hover:bg-red-600/30 border
+            border-red-500/30 text-xs sm:text-sm text-red-400 flex items-center justify-center space-x-2
             transition-all duration-300"
         >
           <X className="w-4 h-4" />
@@ -172,37 +172,37 @@ const EventDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <main className="relative pt-24 pb-12 px-4">
+      <main className="relative pt-20 sm:pt-24 pb-12 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Event Header */}
           <div className={`transition-all duration-1000 mb-6
             ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
-            <div className="bg-black/40 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-blue-400
+            <div className="bg-black/40 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                <div className="flex-1 w-full">
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-blue-400
                     bg-clip-text text-transparent">
                     {eventData.name}
                   </h1>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 mb-3">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-400 mb-3">
                     <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4" />
+                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>{eventData.date}</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>{eventData.venue}</span>
+                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="truncate max-w-[150px] sm:max-w-none">{eventData.venue}</span>
                     </div>
-                    <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs">
+                    <span className="px-2 sm:px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs">
                       {eventData.status}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-300">{eventData.description}</p>
+                  <p className="text-xs sm:text-sm text-gray-300">{eventData.description}</p>
                 </div>
                 <button
                   onClick={() => navigate('/profile')}
-                  className="px-4 py-2 rounded-lg bg-purple-600/20 hover:bg-purple-600/30
-                    border border-purple-500/30 text-sm text-purple-400 transition-all duration-300"
+                  className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg bg-purple-600/20 hover:bg-purple-600/30
+                    border border-purple-500/30 text-xs sm:text-sm text-purple-400 transition-all duration-300"
                 >
                   Back to Profile
                 </button>
@@ -213,20 +213,20 @@ const EventDashboard = () => {
           {/* Tabs */}
           <div className={`mb-6 transition-all duration-1000 delay-100
             ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-            <div className="flex space-x-2 overflow-x-auto pb-2">
+            <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-4 py-3 rounded-lg whitespace-nowrap
+                  className={`flex items-center space-x-2 px-3 sm:px-4 py-2 sm:py-3 rounded-lg whitespace-nowrap
                     transition-all duration-300 ${
                     activeTab === tab.id
                       ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25'
                       : 'bg-black/40 backdrop-blur-xl border border-purple-500/30 text-gray-400 hover:text-white hover:border-purple-500/50'
                   }`}
                 >
-                  <tab.icon className="w-4 h-4" />
-                  <span className="text-sm font-medium">{tab.label}</span>
+                  <tab.icon className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="text-xs sm:text-sm font-medium">{tab.label}</span>
                 </button>
               ))}
             </div>
@@ -238,16 +238,16 @@ const EventDashboard = () => {
 
             {/* General / Post Event Analysis Tab */}
             {activeTab === 'general' && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <StatCard icon={Ticket} label="Total Tickets" value={eventData.totalTickets} />
                   <StatCard icon={TrendingUp} label="Sold Tickets" value={eventData.soldTickets} color="blue" />
                   <StatCard icon={CheckCircle} label="Checked In" value={checkedInGuests.length} color="green" />
                   <StatCard icon={Eye} label="Revenue" value={eventData.revenue} color="yellow" />
                 </div>
 
-                <div className="bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30 p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+                <div className="bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30 p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-white mb-4 flex items-center space-x-2">
                     <BarChart3 className="w-5 h-5 text-purple-400" />
                     <span>Event Analytics</span>
                   </h3>
