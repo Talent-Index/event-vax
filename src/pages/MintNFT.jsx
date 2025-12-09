@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Sparkles,
   Wallet,
@@ -13,12 +13,18 @@ import {
   Star,
   Shield,
   X,
-  ArrowRight
+  ArrowRight,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
+import CommentRatingSection from '../components/CommentRatingSection';
 
 const QuantumMintNFT = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const eventId = searchParams.get('eventId');
+  const fromTicketPage = searchParams.get('fromTicket') === 'true';
 
   const [walletAddress, setWalletAddress] = useState(null);
   const [mintingStatus, setMintingStatus] = useState(null);
@@ -32,10 +38,33 @@ const QuantumMintNFT = () => {
   const [eventData, setEventData] = useState(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
   const [selectedTicketType, setSelectedTicketType] = useState('regular');
+  const [showCommentsPreview, setShowCommentsPreview] = useState(false);
+  const [hasTicketMinted, setHasTicketMinted] = useState(false);
 
   useEffect(() => {
     fetchEventData();
+    checkIfTicketMinted();
   }, [eventId]);
+
+  const checkIfTicketMinted = () => {
+    if (!eventId) return;
+
+    // Check if user has already minted a ticket for this event
+    const walletAddr = localStorage.getItem('walletAddress');
+    if (walletAddr) {
+      const mintedTickets = localStorage.getItem(`mintedTickets_${walletAddr}`);
+      if (mintedTickets) {
+        const tickets = JSON.parse(mintedTickets);
+        const ticketForEvent = tickets.find(t =>
+          t.eventName && eventData && t.eventName.includes(eventData.name)
+        );
+        if (ticketForEvent) {
+          setHasTicketMinted(true);
+          setCurrentStep(5); // Jump to comments step
+        }
+      }
+    }
+  };
 
   const fetchEventData = async () => {
     if (!eventId) {
@@ -258,6 +287,7 @@ const QuantumMintNFT = () => {
 
       const currentTicket = getCurrentTicketDetails();
       const mintedTicket = {
+        eventId: eventId,
         eventName: currentTicket.name,
         eventDate: currentTicket.attributes.find(attr => attr.trait_type === "Date")?.value || eventData.date,
         eventTime: "2:00 PM - 10:00 PM",
@@ -306,7 +336,8 @@ const QuantumMintNFT = () => {
   const handleCloseModal = () => {
     setShowSuccessModal(false);
     setMintedTicketData(null);
-    setCurrentStep(2);
+    setCurrentStep(5); // Move to comments section after minting
+    setHasTicketMinted(true);
   };
 
   const FloatingParticle = ({ delay = 0 }) => {
@@ -377,27 +408,34 @@ const QuantumMintNFT = () => {
 
         {/* Progress Steps */}
         <div className="mb-8 sm:mb-10">
-          <div className="flex justify-between items-center max-w-3xl mx-auto">
+          <div className="flex justify-between items-center max-w-4xl mx-auto">
             {[
               { num: 1, label: 'Connect', icon: Wallet },
               { num: 2, label: 'Preview', icon: Eye },
               { num: 3, label: 'Generate', icon: Zap },
-              { num: 4, label: 'Mint', icon: Ticket }
+              { num: 4, label: 'Mint', icon: Ticket },
+              { num: 5, label: 'Comments', icon: MessageSquare }
             ].map(({ num, label, icon: Icon }) => (
               <div key={num} className="flex flex-col items-center flex-1">
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-500
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-500
                               ${currentStep >= num
                     ? 'bg-gradient-to-r from-purple-600 to-blue-600 scale-110'
                     : 'bg-gray-800 border border-gray-700'}`}>
                   {currentStep > num ? (
-                    <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
                   ) : (
-                    <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${currentStep >= num ? 'text-white' : 'text-gray-500'}`} />
+                    <Icon className={`w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 ${currentStep >= num ? 'text-white' : 'text-gray-500'}`} />
                   )}
                 </div>
                 <p className={`text-xs sm:text-sm mt-2 ${currentStep >= num ? 'text-purple-400' : 'text-gray-500'}`}>
                   {label}
                 </p>
+                {num < 5 && (
+                  <div className={`hidden md:block absolute w-16 lg:w-24 h-0.5 left-1/2 top-5 lg:top-6 transition-all duration-500
+                    ${currentStep > num ? 'bg-gradient-to-r from-purple-600 to-blue-600' : 'bg-gray-700'}`}
+                    style={{ transform: 'translateX(50%)' }}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -454,8 +492,11 @@ const QuantumMintNFT = () => {
                 </div>
               ) : (
                 <>
-                  {/* Ticket Type Selection */}
-                  <div className="mb-6 sm:mb-8">
+                  {/* Only show steps 2-4 content if NOT on step 5 */}
+                  {currentStep < 5 && (
+                    <>
+                      {/* Ticket Type Selection */}
+                      <div className="mb-6 sm:mb-8">
                     <div className="flex items-center mb-3 sm:mb-4">
                       <Ticket className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-purple-400" />
                       <h3 className="text-xl sm:text-2xl font-bold">Select Ticket Type</h3>
@@ -563,6 +604,35 @@ const QuantumMintNFT = () => {
                         ))}
                       </div>
                     </div>
+
+                    {/* Comments Preview Dropdown */}
+                    <div className="mt-4">
+                      <button
+                        onClick={() => setShowCommentsPreview(!showCommentsPreview)}
+                        className="w-full flex items-center justify-between p-4 bg-gray-800/50 hover:bg-gray-800/70 rounded-lg border border-purple-500/30 transition-all"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <MessageSquare className="w-5 h-5 text-purple-400" />
+                          <span className="text-white font-semibold">Preview Event Comments & Ratings</span>
+                        </div>
+                        {showCommentsPreview ? (
+                          <ChevronUp className="w-5 h-5 text-purple-400" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-purple-400" />
+                        )}
+                      </button>
+
+                      {showCommentsPreview && (
+                        <div className="mt-4 p-4 bg-gray-800/30 rounded-lg border border-purple-500/20">
+                          <CommentRatingSection
+                            eventId={eventId}
+                            eventName={eventData?.name}
+                            canComment={false}
+                            showPreview={true}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Action Buttons */}
@@ -607,6 +677,41 @@ const QuantumMintNFT = () => {
                     </button>
                   </div>
                 </>
+              )}
+                    </>
+                  )}
+
+              {/* Step 5: Comments & Ratings Section (After Minting) */}
+              {walletAddress && currentStep === 5 && hasTicketMinted && (
+                <div className="space-y-6">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-full
+                                  flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-green-400" />
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-bold mb-2">Ticket Minted Successfully!</h3>
+                    <p className="text-sm sm:text-base text-gray-400 mb-4">
+                      Share your experience and rate the event organizer
+                    </p>
+                  </div>
+
+                  <CommentRatingSection
+                    eventId={eventId}
+                    eventName={eventData?.name}
+                    canComment={true}
+                    showPreview={false}
+                  />
+
+                  <div className="flex justify-center mt-6">
+                    <button
+                      onClick={() => navigate('/ticket')}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl transition-all duration-300 flex items-center space-x-2"
+                    >
+                      <Ticket className="w-5 h-5" />
+                      <span>View My Tickets</span>
+                    </button>
+                  </div>
+                </div>
               )}
             </>
           )}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { Wallet, Ticket as TicketIcon, Calendar, MapPin, User, QrCode, Download, AlertCircle, Loader, Eye, DollarSign } from 'lucide-react';
+import { Wallet, Ticket as TicketIcon, Calendar, MapPin, User, QrCode, Download, AlertCircle, Loader, Eye, DollarSign, MessageSquare } from 'lucide-react';
 
 const AVALANCHE_MAINNET_PARAMS = {
   chainId: '0xA86A',
@@ -96,6 +96,7 @@ const Ticket = () => {
       const demoTickets = [
         {
           tokenId: "1",
+          eventId: "event_1",
           eventName: "EventVax Summit 2025",
           eventDate: "March 15, 2025",
           eventTime: "2:00 PM - 10:00 PM",
@@ -113,6 +114,7 @@ const Ticket = () => {
         },
         {
           tokenId: "2",
+          eventId: "event_2",
           eventName: "Web3 Developer Conference",
           eventDate: "April 22, 2025",
           eventTime: "9:00 AM - 6:00 PM",
@@ -183,6 +185,15 @@ const Ticket = () => {
     if (selectedTicket) {
       localStorage.setItem('resellTicketData', JSON.stringify(selectedTicket));
       window.location.href = '/resell';
+    }
+  };
+
+  const handleCommentOnEvent = () => {
+    // Navigate to mint page with fromTicket flag to show comments section
+    if (selectedTicket) {
+      // Extract event ID from ticket data (you may need to adjust this based on your data structure)
+      const eventId = selectedTicket.eventId || selectedTicket.tokenId;
+      window.location.href = `/mint?eventId=${eventId}&fromTicket=true`;
     }
   };
 
@@ -475,14 +486,21 @@ const Ticket = () => {
                                   Download Ticket
                                 </button>
                                 <button
+                                  onClick={handleCommentOnEvent}
+                                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-colors duration-300 flex items-center justify-center text-sm sm:text-base"
+                                >
+                                  <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                                  Comment on Event
+                                </button>
+                                <button
                                   onClick={handleResellTicket}
                                   className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-colors duration-300 flex items-center justify-center text-sm sm:text-base"
                                 >
                                   <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                   Resell Ticket
                                 </button>
-                                <button className="w-full bg-green-700 hover:bg-green-600 text-white py-3 px-6 rounded-xl transition-colors duration-300 flex items-center justify-center">
-                                  <Eye className="w-5 h-5 mr-2" />
+                                <button className="w-full bg-green-700 hover:bg-green-600 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-colors duration-300 flex items-center justify-center text-sm sm:text-base">
+                                  <Eye className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                   View on Explorer
                                 </button>
                               </div>
