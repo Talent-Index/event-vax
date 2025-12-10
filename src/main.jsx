@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { ChakraProvider, defaultSystem } from '@chakra-ui/react';
+import { WalletProvider } from './contexts/WalletContext';
 import Home from './pages/Home';
 import Discover from './pages/Discover';
 import Testimonials from './pages/Testimonials';
@@ -104,7 +105,9 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ChakraProvider value={defaultSystem}>
-      <RouterProvider router={router} />
+      <WalletProvider>
+        <RouterProvider router={router} />
+      </WalletProvider>
     </ChakraProvider>
   </React.StrictMode>
 );
