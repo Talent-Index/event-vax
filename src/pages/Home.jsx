@@ -6,8 +6,8 @@ import Testimonials from './Testimonials';
 import Discover from './Discover';
 // Footer is now handled elsewhere in the application
 import Teams from './Teams';
-import { ethers } from 'ethers';
 import { Link } from 'react-router-dom';
+import { useWallet } from '../contexts/WalletContext';
 
 // Avalanche Network Configuration
 const AVALANCHE_MAINNET_PARAMS = {
@@ -88,9 +88,22 @@ const UltimateEventPlatform = () => {
   const [selectedFeature, setSelectedFeature] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [activeStat, setActiveStat] = useState(null);
-  const [walletAddress, setWalletAddress] = useState(null);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { walletAddress, isConnecting, connectWallet, isConnected } = useWallet();
+  const [walletInitialized, setWalletInitialized] = useState(false);
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('Home component wallet state:', { isConnected, walletAddress, isConnecting });
+  }, [isConnected, walletAddress, isConnecting]);
+  
+  // Wait for wallet context to initialize
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setWalletInitialized(true);
+    }, 1000); // Give wallet context time to check existing connections
+    
+    return () => clearTimeout(timer);
+  }, []);
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
   const [activeEventFilter, setActiveEventFilter] = useState('all');
   const [events, setEvents] = useState([]);
@@ -127,21 +140,7 @@ const UltimateEventPlatform = () => {
     }
   };
 
-  useEffect(() => {
-    checkWalletConnection();
 
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('disconnect', handleDisconnect);
-    }
-
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-        window.ethereum.removeListener('disconnect', handleDisconnect);
-      }
-    };
-  }, []);
 
   const features = [
     {
@@ -164,150 +163,33 @@ const UltimateEventPlatform = () => {
     }
   ];
 
-  const checkWalletConnection = async () => {
-    if (typeof window.ethereum !== "undefined") {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          // Check if user was previously authenticated
-          const storedAuth = localStorage.getItem(`authenticated_${accounts[0]}`);
-          if (storedAuth) {
-            setWalletAddress(accounts[0]);
-            setIsAuthenticated(true);
-          }
-        }
-      } catch (error) {
-        console.error("Error checking wallet connection:", error);
-      }
-    }
-  };
-
-  const handleAccountsChanged = (accounts) => {
-    if (accounts.length > 0) {
-      // Reset authentication when account changes
-      setWalletAddress(null);
-      setIsAuthenticated(false);
-      const storedAuth = localStorage.getItem(`authenticated_${accounts[0]}`);
-      if (storedAuth) {
-        setWalletAddress(accounts[0]);
-        setIsAuthenticated(true);
-      }
-    } else {
-      setWalletAddress(null);
-      setIsAuthenticated(false);
-    }
-  };
-
-  const handleDisconnect = () => {
-    if (walletAddress) {
-      localStorage.removeItem(`authenticated_${walletAddress}`);
-    }
-    setWalletAddress(null);
-    setIsAuthenticated(false);
-  };
-
-  const generateSignMessage = (address) => {
-    const timestamp = Date.now();
-    return `Welcome to EventVerse!
-
-Please sign this message to authenticate your wallet.
-
-Wallet: ${address}
-Timestamp: ${timestamp}
-Nonce: ${Math.random().toString(36).substring(2, 15)}
-
-This request will not trigger a blockchain transaction or cost any gas fees.`;
-  };
-
-  const connectWallet = async () => {
-    if (typeof window.ethereum === "undefined") {
-      alert("Please install MetaMask to connect your wallet!");
-      return;
-    }
-
-    setIsConnecting(true);
+  const handleConnectWallet = async () => {
     try {
-      // Step 1: Request account access
-      const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts'
-      });
-
-      if (accounts.length === 0) {
-        throw new Error("No accounts found");
-      }
-
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
-
-      // Step 2: Check if we're on the correct network
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      if (chainId !== AVALANCHE_MAINNET_PARAMS.chainId) {
-        try {
-          await window.ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: AVALANCHE_MAINNET_PARAMS.chainId }],
-          });
-        } catch (switchError) {
-          if (switchError.code === 4902) {
-            // Network not added, add it
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [AVALANCHE_MAINNET_PARAMS]
-            });
-          } else {
-            throw switchError;
-          }
-        }
-      }
-
-      // Step 3: Request signature for authentication
-      const message = generateSignMessage(address);
-
-      try {
-        const signature = await signer.signMessage(message);
-        console.log("Signature successful:", signature);
-
-        // Store authentication status
-        localStorage.setItem(`authenticated_${address}`, JSON.stringify({
-          timestamp: Date.now(),
-          signature: signature
-        }));
-
-        setWalletAddress(address);
-        setIsAuthenticated(true);
-        setShowSignInPrompt(false);
-        console.log("Connected and authenticated:", address);
-
-      } catch (signError) {
-        if (signError.code === 4001) {
-          throw new Error("Signature rejected by user");
-        } else {
-          throw new Error("Failed to sign message: " + signError.message);
-        }
-      }
-
+      await connectWallet();
+      setShowSignInPrompt(false);
     } catch (error) {
-      console.error("Error connecting to wallet:", error);
+      console.error("Error connecting wallet:", error);
       alert(error.message || "Failed to connect wallet");
-    } finally {
-      setIsConnecting(false);
     }
-  };
-
-  const disconnectWallet = () => {
-    if (walletAddress) {
-      localStorage.removeItem(`authenticated_${walletAddress}`);
-    }
-    setWalletAddress(null);
-    setIsAuthenticated(false);
   };
 
   const handleProtectedNavigation = (path) => {
-    if (!isAuthenticated) {
+    console.log('Navigation check:', { isConnected, walletAddress, walletInitialized });
+    
+    // If wallet context hasn't initialized yet, wait
+    if (!walletInitialized) {
+      console.log('Wallet not initialized yet, waiting...');
+      setTimeout(() => handleProtectedNavigation(path), 500);
+      return;
+    }
+    
+    if (!isConnected || !walletAddress) {
+      console.log('Wallet not connected, showing sign in prompt');
       setShowSignInPrompt(true);
       return;
     }
+    
+    // console.log('Wallet connected, navigating to:', path);
     window.location.href = path;
   };
 
@@ -340,12 +222,12 @@ This request will not trigger a blockchain transaction or cost any gas fees.`;
             <div className="p-6">
               <div className="space-y-3">
                 <button
-                  onClick={connectWallet}
+                  onClick={handleConnectWallet}
                   disabled={isConnecting}
                   className="w-full bg-purple-600 hover:bg-purple-500 text-white py-3 px-6 rounded-xl transition-colors duration-300 flex items-center justify-center space-x-2"
                 >
                   <Power className="w-5 h-5" />
-                  <span>{isConnecting ? 'Signing In...' : 'Sign In with Wallet'}</span>
+                  <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
                 </button>
                 <button
                   onClick={() => setShowSignInPrompt(false)}

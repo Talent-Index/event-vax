@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Power, User, Menu, X } from 'lucide-react';
-import { ethers } from 'ethers';
+import { useWallet } from '../contexts/WalletContext';
 
 // Avalanche Network Configuration
 const AVALANCHE_MAINNET_PARAMS = {
@@ -17,78 +17,25 @@ const AVALANCHE_MAINNET_PARAMS = {
 };
 
 const Header = () => {
-  const [walletAddress, setWalletAddress] = useState(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const { walletAddress, isConnecting, connectWallet, disconnectWallet, isConnected } = useWallet();
   const [isVisible, setIsVisible] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('Header wallet state:', { walletAddress, isConnected, isConnecting });
+  }, [walletAddress, isConnected, isConnecting]);
 
   useEffect(() => {
     setIsVisible(true);
-    checkWalletConnection();
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('disconnect', handleDisconnect);
-    }
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-        window.ethereum.removeListener('disconnect', handleDisconnect);
-      }
-    };
-    // eslint-disable-next-line
   }, []);
 
-  const checkWalletConnection = async () => {
-    if (typeof window.ethereum !== "undefined") {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          setWalletAddress(accounts[0]);
-        }
-      } catch (error) {
-        console.error("Error checking wallet connection:", error);
-      }
-    }
-  };
-
-  const handleAccountsChanged = (accounts) => {
-    if (accounts.length > 0) {
-      setWalletAddress(accounts[0]);
-    } else {
-      setWalletAddress(null);
-    }
-  };
-
-  const handleDisconnect = () => {
-    setWalletAddress(null);
-  };
-
-  const connectWallet = async () => {
-    if (typeof window.ethereum === "undefined") {
-      alert("Please install MetaMask to connect your wallet!");
-      return;
-    }
-    setIsConnecting(true);
+  const handleConnectWallet = async () => {
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts'
-      });
-      if (accounts.length > 0) {
-        const signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        setWalletAddress(address);
-        console.log("Connected Address:", address);
-      }
+      await connectWallet();
     } catch (error) {
-      console.error("Error connecting to wallet:", error);
-    } finally {
-      setIsConnecting(false);
+      alert(error.message || "Failed to connect wallet");
     }
-  };
-
-  const disconnectWallet = () => {
-    setWalletAddress(null);
   };
 
   return (
@@ -145,7 +92,7 @@ const Header = () => {
                 </Link>
               )}
               <button
-                onClick={walletAddress ? disconnectWallet : connectWallet}
+                onClick={walletAddress ? disconnectWallet : handleConnectWallet}
                 disabled={isConnecting}
                 className="relative px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 \
                   hover:from-purple-500 hover:to-blue-500 transition-all text-sm"
@@ -203,7 +150,7 @@ const Header = () => {
               )}
               <button
                 onClick={() => {
-                  walletAddress ? disconnectWallet() : connectWallet();
+                  walletAddress ? disconnectWallet() : handleConnectWallet();
                   setIsMobileMenuOpen(false);
                 }}
                 disabled={isConnecting}

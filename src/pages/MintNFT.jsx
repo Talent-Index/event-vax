@@ -19,6 +19,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import CommentRatingSection from '../components/CommentRatingSection';
+import { useWallet } from '../contexts/WalletContext';
 
 const QuantumMintNFT = () => {
   const [searchParams] = useSearchParams();
@@ -26,7 +27,7 @@ const QuantumMintNFT = () => {
   const eventId = searchParams.get('eventId');
   const fromTicketPage = searchParams.get('fromTicket') === 'true';
 
-  const [walletAddress, setWalletAddress] = useState(null);
+  const { walletAddress, isConnecting, connectWallet } = useWallet();
   const [mintingStatus, setMintingStatus] = useState(null);
   const [tokenURI, setTokenURI] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +46,14 @@ const QuantumMintNFT = () => {
     fetchEventData();
     checkIfTicketMinted();
   }, [eventId]);
+
+  useEffect(() => {
+    if (walletAddress) {
+      setCurrentStep(2);
+    } else {
+      setCurrentStep(1);
+    }
+  }, [walletAddress]);
 
   const checkIfTicketMinted = () => {
     if (!eventId) return;
@@ -131,69 +140,24 @@ const QuantumMintNFT = () => {
   };
 
   useEffect(() => {
-    checkWalletConnection();
-
     const handleScroll = () => {
       setScrollPosition(window.scrollY);
     };
 
     window.addEventListener('scroll', handleScroll);
 
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('chainChanged', () => window.location.reload());
-    }
-
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-      }
     };
   }, []);
 
-  const handleAccountsChanged = (accounts) => {
-    if (accounts.length > 0) {
-      setWalletAddress(accounts[0]);
-      setCurrentStep(2);
-    } else {
-      setWalletAddress(null);
-      setCurrentStep(1);
-    }
-  };
-
-  const checkWalletConnection = async () => {
-    try {
-      if (window.ethereum) {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          setWalletAddress(accounts[0]);
-          setCurrentStep(2);
-        }
-      }
-    } catch (error) {
-      console.error('Error checking wallet connection:', error);
-    }
-  };
-
-  const connectWallet = async () => {
+  const handleConnectWallet = async () => {
     setError(null);
-    setIsLoading(true);
     try {
-      if (!window.ethereum) {
-        throw new Error('Please install MetaMask to connect your wallet');
-      }
-
-      const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts'
-      });
-
-      setWalletAddress(accounts[0]);
+      await connectWallet();
       setCurrentStep(2);
     } catch (error) {
       setError(error.message || 'Error connecting wallet');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -473,13 +437,13 @@ const QuantumMintNFT = () => {
                   <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Connect Your Wallet</h3>
                   <p className="text-sm sm:text-base text-gray-400 mb-6 sm:mb-8 px-4">Connect your wallet to start minting your NFT ticket</p>
                   <button
-                    onClick={connectWallet}
-                    disabled={isLoading}
+                    onClick={handleConnectWallet}
+                    disabled={isConnecting}
                     className="group relative px-6 sm:px-8 py-3 sm:py-4 rounded-xl overflow-hidden transition-all duration-300 hover:scale-105"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 animate-gradient-x" />
                     <div className="relative z-10 flex items-center space-x-2">
-                      {isLoading ? (
+                      {isConnecting ? (
                         <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                       ) : (
                         <>

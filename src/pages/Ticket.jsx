@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ethers } from 'ethers';
 import { Wallet, Ticket as TicketIcon, Calendar, MapPin, User, QrCode, Download, AlertCircle, Loader, Eye, DollarSign, MessageSquare } from 'lucide-react';
+import { useWallet } from '../contexts/WalletContext';
 
 const AVALANCHE_MAINNET_PARAMS = {
   chainId: '0xA86A',
@@ -18,13 +18,11 @@ const AVALANCHE_MAINNET_PARAMS = {
 const CONTRACT_ADDRESS = "0x256ff3b9d3df415a05ba42beb5f186c28e103b2a";
 
 const Ticket = () => {
+  const { walletAddress, isConnecting, connectWallet, isConnected } = useWallet();
+  
   // UI States
   const [isVisible, setIsVisible] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
-  
-  // Wallet & Contract States
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   
@@ -33,48 +31,15 @@ const Ticket = () => {
 
   useEffect(() => {
     setIsVisible(true);
-    checkWalletConnection();
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('chainChanged', () => window.location.reload());
-    }
-
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-      }
-    };
   }, []);
 
   useEffect(() => {
-    if (isWalletConnected) {
+    if (isConnected && walletAddress) {
       fetchUserTickets();
-    }
-  }, [isWalletConnected, walletAddress]);
-
-  const handleAccountsChanged = (accounts) => {
-    if (accounts.length === 0) {
-      setIsWalletConnected(false);
-      setWalletAddress('');
-      setUserTickets([]);
     } else {
-      setWalletAddress(accounts[0]);
+      setUserTickets([]);
     }
-  };
-
-  const checkWalletConnection = async () => {
-    if (typeof window.ethereum !== "undefined") {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          setWalletAddress(accounts[0]);
-          setIsWalletConnected(true);
-        }
-      } catch (error) {
-        console.error("Error checking wallet connection:", error);
-      }
-    }
-  };
+  }, [isConnected, walletAddress]);
 
   const fetchUserTickets = async () => {
     try {
@@ -154,29 +119,13 @@ const Ticket = () => {
     }
   };
 
-  const connectWallet = async () => {
-    if (typeof window.ethereum === "undefined") {
-      setError("Please install MetaMask to connect your wallet!");
-      return;
-    }
-
+  const handleConnectWallet = async () => {
     try {
-      setIsLoading(true);
       setError(null);
-
-      const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts'
-      });
-
-      if (accounts.length > 0) {
-        setWalletAddress(accounts[0]);
-        setIsWalletConnected(true);
-      }
+      await connectWallet();
     } catch (error) {
       console.error("Error connecting wallet:", error);
-      setError("Failed to connect wallet. Please try again.");
-    } finally {
-      setIsLoading(false);
+      setError(error.message || "Failed to connect wallet. Please try again.");
     }
   };
 
@@ -266,7 +215,7 @@ const Ticket = () => {
             </p>
           </div>
 
-          {!isWalletConnected ? (
+          {!isConnected ? (
             <div className="text-center">
               <div className="mb-8 p-6 sm:p-8 bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-purple-500/30">
                 <TicketIcon className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-purple-400" />
@@ -275,15 +224,15 @@ const Ticket = () => {
                   Connect your wallet to view your ticket collection
                 </p>
                 <button
-                  onClick={connectWallet}
-                  disabled={isLoading}
+                  onClick={handleConnectWallet}
+                  disabled={isConnecting}
                   className="group relative px-6 py-3 rounded-xl overflow-hidden w-full sm:w-auto"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600
                     group-hover:from-purple-500 group-hover:to-blue-500 transition-colors duration-300" />
                   <div className="relative z-10 flex items-center justify-center space-x-2">
-                    {isLoading ? <Loader className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
-                    <span>{isLoading ? "Connecting..." : "Connect Wallet"}</span>
+                    {isConnecting ? <Loader className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
+                    <span>{isConnecting ? "Connecting..." : "Connect Wallet"}</span>
                   </div>
                 </button>
               </div>
