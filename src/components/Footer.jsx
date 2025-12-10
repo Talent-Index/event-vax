@@ -45,7 +45,7 @@ const AnimatedFooter = () => {
 
       <div className="relative max-w-6xl mx-auto px-4 pt-8 pb-6">
         {/* Main Footer Grid */}
-        <div className="grid grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Brand Column */}
           <div className="space-y-3">
             <div className="flex items-center space-x-2 group">
@@ -57,7 +57,7 @@ const AnimatedFooter = () => {
                   <span className="text-sm font-bold text-white">E</span>
                 </div>
               </div>
-              <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r 
+              <span className="text-base sm:text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r
                 from-purple-400 to-blue-400">EventVerse</span>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed">
@@ -112,8 +112,8 @@ const AnimatedFooter = () => {
                 { Icon: MapPin, text: 'Nairobi, Kenya' }
               ].map(({ Icon, text }, index) => (
                 <li key={index} className="flex items-center space-x-2 group">
-                  <Icon className="w-3 h-3 text-purple-500 group-hover:scale-110 transition-transform" />
-                  <span className="text-xs text-gray-400 group-hover:text-white transition-colors">{text}</span>
+                  <Icon className="w-3 h-3 text-purple-500 group-hover:scale-110 transition-transform flex-shrink-0" />
+                  <span className="text-xs text-gray-400 group-hover:text-white transition-colors break-all">{text}</span>
                 </li>
               ))}
             </ul>
@@ -142,16 +142,16 @@ const AnimatedFooter = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-purple-500/20 pt-4 flex justify-between items-center">
-          <p className="text-xs text-gray-400">
-            © 2025 EventVerse. Made with <Heart className="inline-block w-3 h-3 text-red-500 animate-pulse" /> 
+        <div className="border-t border-purple-500/20 pt-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+          <p className="text-xs text-gray-400 text-center sm:text-left">
+            © 2025 EventVerse. Made with <Heart className="inline-block w-3 h-3 text-red-500 animate-pulse" />
             by our team
           </p>
           <button
             onClick={scrollToTop}
             className="group p-1.5 bg-purple-900/20 rounded-md hover:bg-purple-900/40 transition-all"
           >
-            <ArrowUp className="w-4 h-4 text-purple-400 group-hover:text-purple-300 
+            <ArrowUp className="w-4 h-4 text-purple-400 group-hover:text-purple-300
               group-hover:-translate-y-1 transition-all" />
           </button>
         </div>

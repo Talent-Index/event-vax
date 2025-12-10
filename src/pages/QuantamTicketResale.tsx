@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { ethers } from "ethers"
 import { Wallet, Loader2, AlertCircle, Tag, ShoppingCart } from "lucide-react"
+import { useWallet } from '../contexts/WalletContext'
 
 declare global {
   interface Window {
@@ -40,9 +41,8 @@ const CONTRACT_ABI = [
 ]
 
 const QuantumTicketResale = () => {
+  const { walletAddress, isConnecting, connectWallet, disconnectWallet, isConnected } = useWallet()
   const [isVisible, setIsVisible] = useState(false)
-  const [isWalletConnected, setIsWalletConnected] = useState(false)
-  const [walletAddress, setWalletAddress] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [userTickets, setUserTickets] = useState<Ticket[]>([])
@@ -53,77 +53,27 @@ const QuantumTicketResale = () => {
 
   useEffect(() => {
     setIsVisible(true)
-    checkWalletConnection()
-    if (typeof window.ethereum !== "undefined") {
-      window.ethereum.on("accountsChanged", handleAccountsChanged)
-      window.ethereum.on("chainChanged", () => window.location.reload())
-    }
-
-    return () => {
-      if (typeof window.ethereum !== "undefined") {
-        window.ethereum.removeListener("accountsChanged", handleAccountsChanged)
-      }
-    }
   }, [])
 
   useEffect(() => {
-    if (isWalletConnected) {
+    if (isConnected && walletAddress) {
       updateUserTickets()
       updateResaleListings()
     }
-  }, [isWalletConnected])
+  }, [isConnected, walletAddress])
 
-  const handleAccountsChanged = (accounts: string[]) => {
-    if (accounts.length === 0) {
-      setIsWalletConnected(false)
-      setWalletAddress("")
-    } else {
-      setWalletAddress(accounts[0])
-    }
-  }
-
-  const checkWalletConnection = async () => {
-    if (typeof window.ethereum !== "undefined") {
-      try {
-        const accounts = await window.ethereum.request({ method: "eth_accounts" })
-        if (accounts.length > 0) {
-          setWalletAddress(accounts[0])
-          setIsWalletConnected(true)
-        }
-      } catch (error) {
-        console.error("Error checking wallet connection:", error)
-      }
-    }
-  }
-
-  const connectWallet = async () => {
-    if (typeof window.ethereum === "undefined") {
-      setError("Please install MetaMask to connect your wallet!")
-      return
-    }
-
+  const handleConnectWallet = async () => {
     try {
-      setIsLoading(true)
       setError(null)
-
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      })
-
-      if (accounts.length > 0) {
-        setWalletAddress(accounts[0])
-        setIsWalletConnected(true)
-      }
+      await connectWallet()
     } catch (error) {
       console.error("Error connecting wallet:", error)
-      setError("Failed to connect wallet. Please try again.")
-    } finally {
-      setIsLoading(false)
+      setError((error as Error).message || "Failed to connect wallet. Please try again.")
     }
   }
 
   const updateUserTickets = async () => {
-    if (!isWalletConnected) return
+    if (!isConnected || !walletAddress) return
 
     try {
       const provider = new ethers.BrowserProvider(window.ethereum!)
@@ -353,10 +303,10 @@ const QuantumTicketResale = () => {
             </div>
           </div>
 
-          {!isWalletConnected ? (
+          {!isConnected ? (
             <button
-              onClick={connectWallet}
-              disabled={isLoading}
+              onClick={handleConnectWallet}
+              disabled={isConnecting}
               className="w-full group relative px-4 sm:px-6 py-3 sm:py-4 rounded-xl overflow-hidden mb-4 sm:mb-6"
             >
               <div
@@ -364,8 +314,8 @@ const QuantumTicketResale = () => {
                   group-hover:from-purple-500 group-hover:to-blue-500 transition-colors duration-300"
               />
               <div className="relative z-10 flex items-center justify-center space-x-2">
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
-                <span>{isLoading ? "Connecting..." : "Connect Wallet"}</span>
+                {isConnecting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
+                <span>{isConnecting ? "Connecting..." : "Connect Wallet"}</span>
               </div>
             </button>
           ) : (
@@ -380,7 +330,7 @@ const QuantumTicketResale = () => {
                 </div>
                 <button
                   className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
-                  onClick={() => setIsWalletConnected(false)}
+                  onClick={disconnectWallet}
                 >
                   Disconnect
                 </button>

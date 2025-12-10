@@ -72,24 +72,24 @@ const Profile = () => {
   const SectionHeader = ({ title, icon: Icon, isExpanded, onClick, count }) => (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-between p-4 bg-black/40 backdrop-blur-xl 
+      className="w-full flex items-center justify-between p-3 sm:p-4 bg-black/40 backdrop-blur-xl
         rounded-lg border border-purple-500/30 hover:border-purple-500/50 transition-all duration-300
         group"
     >
-      <div className="flex items-center space-x-3">
-        <div className="w-10 h-10 rounded-lg bg-purple-600/20 flex items-center justify-center
-          group-hover:bg-purple-600/30 transition-all duration-300">
-          <Icon className="w-5 h-5 text-purple-400" />
+      <div className="flex items-center space-x-2 sm:space-x-3">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-purple-600/20 flex items-center justify-center
+          group-hover:bg-purple-600/30 transition-all duration-300 flex-shrink-0">
+          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
         </div>
         <div className="text-left">
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
+          <h3 className="text-base sm:text-lg font-semibold text-white">{title}</h3>
           <p className="text-xs text-gray-400">{count} items</p>
         </div>
       </div>
       {isExpanded ? (
-        <ChevronUp className="w-5 h-5 text-purple-400" />
+        <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 flex-shrink-0" />
       ) : (
-        <ChevronDown className="w-5 h-5 text-purple-400" />
+        <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 flex-shrink-0" />
       )}
     </button>
   );
@@ -116,23 +116,23 @@ const Profile = () => {
       </div>
 
       {/* Main Content */}
-      <main className="relative pt-24 pb-12 px-4">
+      <main className="relative pt-20 sm:pt-24 pb-12 px-4">
         <div className="max-w-4xl mx-auto">
           {/* Profile Header */}
-          <div className={`transition-all duration-1000 mb-8 
+          <div className={`transition-all duration-1000 mb-6 sm:mb-8
             ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
-            <div className="bg-black/40 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 
-                  flex items-center justify-center">
-                  <User className="w-10 h-10 text-white" />
+            <div className="bg-black/40 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-4 sm:p-6">
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-r from-purple-600 to-blue-600
+                  flex items-center justify-center flex-shrink-0">
+                  <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                 </div>
-                <div className="flex-1">
-                  <h1 className="text-2xl font-bold mb-1 bg-gradient-to-r from-purple-400 to-blue-400 
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold mb-1 bg-gradient-to-r from-purple-400 to-blue-400
                     bg-clip-text text-transparent">
                     My Profile
                   </h1>
-                  <p className="text-sm text-gray-400 font-mono">
+                  <p className="text-xs sm:text-sm text-gray-400 font-mono truncate">
                     {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Not Connected'}
                   </p>
                 </div>
@@ -151,19 +151,19 @@ const Profile = () => {
               count={userData.achievements.length}
             />
             {expandedSections.achievements && (
-              <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-black/20 backdrop-blur-xl
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-3 sm:p-4 bg-black/20 backdrop-blur-xl
                 rounded-lg border border-purple-500/20">
                 {userData.achievements.map((achievement, index) => (
                   <div
                     key={achievement.id}
-                    className="group relative p-4 bg-black/40 backdrop-blur-xl rounded-lg border
+                    className="group relative p-3 sm:p-4 bg-black/40 backdrop-blur-xl rounded-lg border
                       border-purple-500/30 hover:border-purple-500/50 transition-all duration-300
                       hover:scale-105"
                     style={{ transitionDelay: `${index * 50}ms` }}
                   >
-                    <div className={`w-12 h-12 rounded-lg bg-${achievement.color}-600/20
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-${achievement.color}-600/20
                       flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                      <achievement.icon className={`w-6 h-6 text-${achievement.color}-400`} />
+                      <achievement.icon className={`w-5 h-5 sm:w-6 sm:h-6 text-${achievement.color}-400`} />
                     </div>
                     <h4 className="text-sm font-semibold text-white mb-1">{achievement.title}</h4>
                     <p className="text-xs text-gray-400">{achievement.description}</p>
@@ -321,7 +321,7 @@ const Profile = () => {
                         group-hover:scale-105"
                     >
                       <BarChart3 className="w-4 h-4" />
-                      <span>Dashboard</span>
+                      <span className='hidden md:block'>Dashboard</span>
                     </button>
                   </div>
                 ))}

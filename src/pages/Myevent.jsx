@@ -274,50 +274,50 @@ const QuantumEventCreator = () => {
         </div>
       </nav> */}
 
-      <main className="relative container mx-auto px-4 py-24 max-w-7xl">
+      <main className="relative container mx-auto px-4 py-20 sm:py-24 max-w-7xl">
         {/* Header section */}
-        <div className="text-center mb-16" style={{ transform: `translateY(${scrollPosition * 0.3}px)` }}>
-          <h1 className="text-6xl font-bold mb-6 relative inline-block">
-            <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 
+        <div className="text-center mb-10 sm:mb-12 lg:mb-16" style={{ transform: `translateY(${scrollPosition * 0.3}px)` }}>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 relative inline-block">
+            <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400
                          bg-clip-text text-transparent animate-gradient-x">
               Create Your Quantum Event
             </span>
-            <Sparkles className="absolute -right-8 top-0 w-6 h-6 text-yellow-400 animate-bounce" />
+            <Sparkles className="absolute -right-6 sm:-right-8 top-0 w-5 h-5 sm:w-6 sm:h-6 text-yellow-400 animate-bounce" />
           </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-400 max-w-2xl mx-auto px-4">
             Transform your vision into reality with blockchain-powered ticketing
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
-          <div className="bg-gradient-to-br from-purple-600/20 to-purple-900/20 rounded-xl p-6 backdrop-blur-sm border border-purple-500/30 hover:scale-105 transition-transform duration-300">
-            <Users className="w-8 h-8 text-purple-400 mb-2" />
-            <p className="text-2xl font-bold text-white">10k+</p>
-            <p className="text-sm text-gray-400">Active Users</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-8 sm:mb-12">
+          <div className="bg-gradient-to-br from-purple-600/20 to-purple-900/20 rounded-xl p-4 sm:p-6 backdrop-blur-sm border border-purple-500/30 hover:scale-105 transition-transform duration-300">
+            <Users className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400 mb-2" />
+            <p className="text-xl sm:text-2xl font-bold text-white">10k+</p>
+            <p className="text-xs sm:text-sm text-gray-400">Active Users</p>
           </div>
-          <div className="bg-gradient-to-br from-blue-600/20 to-blue-900/20 rounded-xl p-6 backdrop-blur-sm border border-blue-500/30 hover:scale-105 transition-transform duration-300">
-            <Ticket className="w-8 h-8 text-blue-400 mb-2" />
-            <p className="text-2xl font-bold text-white">500+</p>
-            <p className="text-sm text-gray-400">Events Created</p>
+          <div className="bg-gradient-to-br from-blue-600/20 to-blue-900/20 rounded-xl p-4 sm:p-6 backdrop-blur-sm border border-blue-500/30 hover:scale-105 transition-transform duration-300">
+            <Ticket className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 mb-2" />
+            <p className="text-xl sm:text-2xl font-bold text-white">500+</p>
+            <p className="text-xs sm:text-sm text-gray-400">Events Created</p>
           </div>
-          <div className="bg-gradient-to-br from-green-600/20 to-green-900/20 rounded-xl p-6 backdrop-blur-sm border border-green-500/30 hover:scale-105 transition-transform duration-300">
-            <DollarSign className="w-8 h-8 text-green-400 mb-2" />
-            <p className="text-2xl font-bold text-white">$2M+</p>
-            <p className="text-sm text-gray-400">Total Volume</p>
+          <div className="bg-gradient-to-br from-green-600/20 to-green-900/20 rounded-xl p-4 sm:p-6 backdrop-blur-sm border border-green-500/30 hover:scale-105 transition-transform duration-300">
+            <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-green-400 mb-2" />
+            <p className="text-xl sm:text-2xl font-bold text-white">$2M+</p>
+            <p className="text-xs sm:text-sm text-gray-400">Total Volume</p>
           </div>
         </div>
 
         {/* Main Form */}
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
           {/* Basic Information Card */}
-          <div className="bg-gray-900/30 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-8 hover:border-purple-500/50 transition-all duration-300">
-            <h2 className="text-2xl font-bold mb-6 flex items-center">
-              <Sparkles className="w-6 h-6 mr-2 text-purple-400" />
+          <div className="bg-gray-900/30 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-4 sm:p-6 lg:p-8 hover:border-purple-500/50 transition-all duration-300">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-purple-400" />
               Event Details
             </h2>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* Event Name */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -495,13 +495,13 @@ const QuantumEventCreator = () => {
           </div>
 
           {/* Pricing Tiers Card */}
-          <div className="bg-gray-900/30 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-8 hover:border-purple-500/50 transition-all duration-300">
-            <h2 className="text-2xl font-bold mb-6 flex items-center">
-              <DollarSign className="w-6 h-6 mr-2 text-purple-400" />
+          <div className="bg-gray-900/30 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-4 sm:p-6 lg:p-8 hover:border-purple-500/50 transition-all duration-300">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
+              <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-purple-400" />
               Ticket Pricing (AVAX)
             </h2>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
               <PriceCard
                 tier="Regular"
                 icon={Ticket}
@@ -530,15 +530,15 @@ const QuantumEventCreator = () => {
           <div className="flex justify-center">
             <button
               type="submit"
-              className="group relative px-12 py-4 rounded-xl overflow-hidden transition-all duration-300 hover:scale-105"
+              className="group relative px-8 sm:px-12 py-3 sm:py-4 rounded-xl overflow-hidden transition-all duration-300 hover:scale-105 w-full sm:w-auto"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 animate-gradient-x" />
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 style={{ background: 'linear-gradient(45deg, rgba(168,85,247,0.4) 0%, rgba(147,51,234,0.4) 100%)' }} />
-              <div className="relative z-10 flex items-center space-x-3">
-                <Plus className="w-5 h-5" />
-                <span className="font-bold text-lg">Create Event</span>
-                <Sparkles className="w-5 h-5 animate-pulse" />
+              <div className="relative z-10 flex items-center justify-center space-x-2 sm:space-x-3">
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="font-bold text-base sm:text-lg">Create Event</span>
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
               </div>
             </button>
           </div>

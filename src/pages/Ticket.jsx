@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ethers } from 'ethers';
-import { Wallet, Ticket as TicketIcon, Calendar, MapPin, User, QrCode, Download, AlertCircle, Loader, Eye, DollarSign } from 'lucide-react';
+import { Wallet, Ticket as TicketIcon, Calendar, MapPin, User, QrCode, Download, AlertCircle, Loader, Eye, DollarSign, MessageSquare } from 'lucide-react';
+import { useWallet } from '../contexts/WalletContext';
 
 const AVALANCHE_MAINNET_PARAMS = {
   chainId: '0xA86A',
@@ -18,13 +18,11 @@ const AVALANCHE_MAINNET_PARAMS = {
 const CONTRACT_ADDRESS = "0x256ff3b9d3df415a05ba42beb5f186c28e103b2a";
 
 const Ticket = () => {
+  const { walletAddress, isConnecting, connectWallet, isConnected } = useWallet();
+  
   // UI States
   const [isVisible, setIsVisible] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
-  
-  // Wallet & Contract States
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   
@@ -33,48 +31,15 @@ const Ticket = () => {
 
   useEffect(() => {
     setIsVisible(true);
-    checkWalletConnection();
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('chainChanged', () => window.location.reload());
-    }
-
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-      }
-    };
   }, []);
 
   useEffect(() => {
-    if (isWalletConnected) {
+    if (isConnected && walletAddress) {
       fetchUserTickets();
-    }
-  }, [isWalletConnected, walletAddress]);
-
-  const handleAccountsChanged = (accounts) => {
-    if (accounts.length === 0) {
-      setIsWalletConnected(false);
-      setWalletAddress('');
-      setUserTickets([]);
     } else {
-      setWalletAddress(accounts[0]);
+      setUserTickets([]);
     }
-  };
-
-  const checkWalletConnection = async () => {
-    if (typeof window.ethereum !== "undefined") {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          setWalletAddress(accounts[0]);
-          setIsWalletConnected(true);
-        }
-      } catch (error) {
-        console.error("Error checking wallet connection:", error);
-      }
-    }
-  };
+  }, [isConnected, walletAddress]);
 
   const fetchUserTickets = async () => {
     try {
@@ -96,6 +61,7 @@ const Ticket = () => {
       const demoTickets = [
         {
           tokenId: "1",
+          eventId: "event_1",
           eventName: "EventVax Summit 2025",
           eventDate: "March 15, 2025",
           eventTime: "2:00 PM - 10:00 PM",
@@ -113,6 +79,7 @@ const Ticket = () => {
         },
         {
           tokenId: "2",
+          eventId: "event_2",
           eventName: "Web3 Developer Conference",
           eventDate: "April 22, 2025",
           eventTime: "9:00 AM - 6:00 PM",
@@ -152,29 +119,13 @@ const Ticket = () => {
     }
   };
 
-  const connectWallet = async () => {
-    if (typeof window.ethereum === "undefined") {
-      setError("Please install MetaMask to connect your wallet!");
-      return;
-    }
-
+  const handleConnectWallet = async () => {
     try {
-      setIsLoading(true);
       setError(null);
-
-      const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts'
-      });
-
-      if (accounts.length > 0) {
-        setWalletAddress(accounts[0]);
-        setIsWalletConnected(true);
-      }
+      await connectWallet();
     } catch (error) {
       console.error("Error connecting wallet:", error);
-      setError("Failed to connect wallet. Please try again.");
-    } finally {
-      setIsLoading(false);
+      setError(error.message || "Failed to connect wallet. Please try again.");
     }
   };
 
@@ -183,6 +134,15 @@ const Ticket = () => {
     if (selectedTicket) {
       localStorage.setItem('resellTicketData', JSON.stringify(selectedTicket));
       window.location.href = '/resell';
+    }
+  };
+
+  const handleCommentOnEvent = () => {
+    // Navigate to mint page with fromTicket flag to show comments section
+    if (selectedTicket) {
+      // Extract event ID from ticket data (you may need to adjust this based on your data structure)
+      const eventId = selectedTicket.eventId || selectedTicket.tokenId;
+      window.location.href = `/mint?eventId=${eventId}&fromTicket=true`;
     }
   };
 
@@ -240,39 +200,39 @@ const Ticket = () => {
       </div>
 
       {/* Main Content */}
-      <main className="relative pt-20 px-6">
+      <main className="relative pt-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           {/* Title Section */}
-          <div className={`text-center mb-16 transition-all duration-1000 
+          <div className={`text-center mb-8 sm:mb-12 lg:mb-16 transition-all duration-1000
             ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'}`}>
-            <h1 className="text-6xl font-bold mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
               <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                 My Event Tickets
               </span>
             </h1>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-400 max-w-2xl mx-auto px-4">
               View and manage your event tickets. Each ticket is securely stored on the blockchain as an NFT.
             </p>
           </div>
 
-          {!isWalletConnected ? (
+          {!isConnected ? (
             <div className="text-center">
-              <div className="mb-8 p-8 bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-purple-500/30">
-                <TicketIcon className="w-16 h-16 mx-auto mb-4 text-purple-400" />
-                <h2 className="text-2xl font-bold mb-4">Connect Your Wallet</h2>
-                <p className="text-gray-400 mb-6">
+              <div className="mb-8 p-6 sm:p-8 bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-purple-500/30">
+                <TicketIcon className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-purple-400" />
+                <h2 className="text-xl sm:text-2xl font-bold mb-4">Connect Your Wallet</h2>
+                <p className="text-sm sm:text-base text-gray-400 mb-6 px-4">
                   Connect your wallet to view your ticket collection
                 </p>
                 <button
-                  onClick={connectWallet}
-                  disabled={isLoading}
-                  className="group relative px-6 py-3 rounded-xl overflow-hidden"
+                  onClick={handleConnectWallet}
+                  disabled={isConnecting}
+                  className="group relative px-6 py-3 rounded-xl overflow-hidden w-full sm:w-auto"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600
                     group-hover:from-purple-500 group-hover:to-blue-500 transition-colors duration-300" />
                   <div className="relative z-10 flex items-center justify-center space-x-2">
-                    {isLoading ? <Loader className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
-                    <span>{isLoading ? "Connecting..." : "Connect Wallet"}</span>
+                    {isConnecting ? <Loader className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
+                    <span>{isConnecting ? "Connecting..." : "Connect Wallet"}</span>
                   </div>
                 </button>
               </div>
@@ -281,18 +241,18 @@ const Ticket = () => {
             <>
               {/* Wallet Info */}
               <div className="mb-8">
-                <div className="flex items-center justify-between p-6 rounded-xl bg-purple-500/10 border border-purple-500/30">
-                  <div className="flex items-center space-x-4">
-                    <User className="w-6 h-6 text-purple-400" />
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 rounded-xl bg-purple-500/10 border border-purple-500/30 gap-4">
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <User className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400 flex-shrink-0" />
                     <div>
-                      <div className="text-sm text-gray-400">Connected Wallet</div>
-                      <div className="font-mono text-lg">{formatAddress(walletAddress)}</div>
+                      <div className="text-xs sm:text-sm text-gray-400">Connected Wallet</div>
+                      <div className="font-mono text-sm sm:text-base lg:text-lg break-all">{formatAddress(walletAddress)}</div>
                       <div className="text-xs text-gray-500">Network: Avalanche C-Chain</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-400">Total Tickets</div>
-                    <div className="text-3xl font-bold text-purple-400">{userTickets.length}</div>
+                  <div className="text-left sm:text-right w-full sm:w-auto">
+                    <div className="text-xs sm:text-sm text-gray-400">Total Tickets</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-purple-400">{userTickets.length}</div>
                   </div>
                 </div>
               </div>
@@ -303,14 +263,14 @@ const Ticket = () => {
                   <p className="text-gray-400">Loading your tickets...</p>
                 </div>
               ) : userTickets.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
                   {/* Ticket List - Left Sidebar */}
                   <div className="lg:col-span-1">
-                    <h3 className="text-xl font-bold mb-4 text-gray-200 flex items-center">
-                      <TicketIcon className="w-5 h-5 mr-2" />
+                    <h3 className="text-lg sm:text-xl font-bold mb-4 text-gray-200 flex items-center">
+                      <TicketIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Your Tickets ({userTickets.length})
                     </h3>
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                    <div className="space-y-3 max-h-64 sm:max-h-80 lg:max-h-96 overflow-y-auto">
                       {userTickets.map((ticket) => (
                         <div
                           key={ticket.tokenId}
@@ -351,35 +311,35 @@ const Ticket = () => {
                   </div>
 
                   {/* Ticket Detail - Main Content */}
-                  <div className="lg:col-span-3">
+                  <div className="lg:col-span-3 mb-10 md:mb-20">
                     {selectedTicket && (
                       <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-purple-500/30 overflow-hidden">
                         {/* Ticket Header with Image */}
-                        <div className="relative h-64 overflow-hidden">
+                        <div className="relative h-48 sm:h-56 md:h-64 overflow-hidden">
                           <img
                             src={selectedTicket.image}
                             alt={selectedTicket.eventName}
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                          <div className="absolute bottom-6 left-6 right-6">
-                            <div className="flex items-center justify-between">
+                          <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                               <div>
-                                <h2 className="text-3xl font-bold text-white mb-2">{selectedTicket.eventName}</h2>
-                                <div className={`inline-block px-3 py-1 rounded-full text-sm font-bold bg-gradient-to-r ${getTicketTypeColor(selectedTicket.ticketType)} text-white`}>
+                                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">{selectedTicket.eventName}</h2>
+                                <div className={`inline-block px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-gradient-to-r ${getTicketTypeColor(selectedTicket.ticketType)} text-white`}>
                                   {selectedTicket.ticketType}
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <div className="text-sm text-gray-300">Token ID</div>
-                                <div className="text-xl font-mono text-purple-400">#{selectedTicket.tokenId}</div>
+                              <div className="text-left sm:text-right">
+                                <div className="text-xs sm:text-sm text-gray-300">Token ID</div>
+                                <div className="text-lg sm:text-xl font-mono text-purple-400">#{selectedTicket.tokenId}</div>
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        <div className="p-8">
-                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="p-4 sm:p-6 lg:p-8">
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
                             {/* Event Details */}
                             <div className="lg:col-span-2 space-y-6">
                               {/* Date & Time */}
@@ -434,9 +394,10 @@ const Ticket = () => {
                                 <div className="flex-1">
                                   <h3 className="font-semibold text-white mb-1">Owner Information</h3>
                                   <div className="text-sm space-y-1">
-                                    <div>
-                                      <span className="text-gray-400">Wallet Address:</span>
-                                      <span className="text-purple-400 ml-2 font-mono">{selectedTicket.owner}</span>
+                                    <div className="mt-1 overflow-x-auto">
+                                      <span className="text-purple-400 font-mono whitespace-nowrap">
+                                        {selectedTicket.owner}
+                                      </span>
                                     </div>
                                     <div>
                                       <span className="text-gray-400">Network:</span>
@@ -450,38 +411,45 @@ const Ticket = () => {
                             </div>
 
                             {/* QR Code & Actions */}
-                            <div className="lg:col-span-1 space-y-6">
+                            <div className="lg:col-span-1 space-y-4 sm:space-y-6">
                               {/* QR Code */}
-                              <div className="bg-gray-800/50 rounded-xl p-6 text-center">
-                                <h3 className="font-semibold text-white mb-4 flex items-center justify-center">
-                                  <QrCode className="w-5 h-5 mr-2" />
+                              <div className="bg-gray-800/50 rounded-xl p-4 sm:p-6 text-center">
+                                <h3 className="text-sm sm:text-base font-semibold text-white mb-4 flex items-center justify-center">
+                                  <QrCode className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                   Entry QR Code
                                 </h3>
-                                <div className="bg-white p-4 rounded-xl mb-4 inline-block">
+                                <div className="bg-white p-3 sm:p-4 rounded-xl mb-4 inline-block">
                                   <img
                                     src={generateQRCode(selectedTicket)}
                                     alt="QR Code"
-                                    className="w-32 h-32"
+                                    className="w-24 h-24 sm:w-32 sm:h-32"
                                   />
                                 </div>
-                                <div className="text-xs text-gray-500 font-mono">{selectedTicket.qrCode}</div>
+                                <div className="text-xs text-gray-500 font-mono break-all">{selectedTicket.qrCode}</div>
                               </div>
 
                               {/* Actions */}
                               <div className="space-y-3">
-                                <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white py-3 px-6 rounded-xl transition-colors duration-300 flex items-center justify-center">
-                                  <Download className="w-5 h-5 mr-2" />
+                                <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-colors duration-300 flex items-center justify-center text-sm sm:text-base">
+                                  <Download className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                   Download Ticket
                                 </button>
-                                <button 
-                                  onClick={handleResellTicket}
-                                  className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3 px-6 rounded-xl transition-colors duration-300 flex items-center justify-center"
+                                <button
+                                  onClick={handleCommentOnEvent}
+                                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-colors duration-300 flex items-center justify-center text-sm sm:text-base"
                                 >
-                                  <DollarSign className="w-5 h-5 mr-2" />
+                                  <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                                  Comment on Event
+                                </button>
+                                <button
+                                  onClick={handleResellTicket}
+                                  className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-colors duration-300 flex items-center justify-center text-sm sm:text-base"
+                                >
+                                  <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                   Resell Ticket
                                 </button>
-                                <button className="w-full bg-green-700 hover:bg-green-600 text-white py-3 px-6 rounded-xl transition-colors duration-300 flex items-center justify-center">
-                                  <Eye className="w-5 h-5 mr-2" />
+                                <button className="w-full bg-green-700 hover:bg-green-600 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-colors duration-300 flex items-center justify-center text-sm sm:text-base">
+                                  <Eye className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                   View on Explorer
                                 </button>
                               </div>
