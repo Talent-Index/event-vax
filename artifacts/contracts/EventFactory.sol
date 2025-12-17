@@ -50,6 +50,19 @@ contract EventFactorry is AccessControl, Pausable {
     error InvalidTreasury();
     error EventDateInPast();
     error FeeTooHigh();
-    
-    
+
+    constructor(
+        address _ticketImplementation,
+        address _treasury,
+    ) {
+        if (_ticketImplementation == address(0)) revert InvalidImplementation();
+        if (_treasury == address(0)) revert InvalidTreasury();
+
+        ticketImplementation = _ticketImplementation;
+        treasury = _treasury;
+
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(PLATFORM_ADMIN, msg.sender);
+    }
+
 }
