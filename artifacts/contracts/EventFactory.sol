@@ -147,5 +147,17 @@ function setPlatformFee(uint256 _feeBps) external onlyRole(PLATFORM_ADMIN) {
     platformFeeBps = _feeBps;
 
     emit PlatformFeeUpdated(oldFee, _feeBps);
-}
-}
+    }
+
+    /**
+    * @notice Emergency pause
+     */
+     function pause() external onlyRole(PLATFORM_ADMIN) {
+        _pause();
+     }
+
+     function unpause() external onlyRole(PLATFORM_ADMN) {
+        _unpause();
+     }
+}   
+
