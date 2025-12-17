@@ -137,4 +137,15 @@ contract EventFactorry is AccessControl, Pausable {
         emit TreasuryUpdated(oldTreasury, _treasury);
     }
 
+/**
+* @notice Update platform fee (max 10%)
+*/
+function setPlatformFee(uint256 _feeBps) external onlyRole(PLATFORM_ADMIN) {
+    if (_feeBps > 1000) revert FeeTooHigh(); // Max 10%
+
+    uint256 oldFee = platformFeeBps;
+    platformFeeBps = _feeBps;
+
+    emit PlatformFeeUpdated(oldFee, _feeBps);
+}
 }
