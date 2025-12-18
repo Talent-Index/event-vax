@@ -251,7 +251,19 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
         /**
         * @notice Cancel event and enable refunds
          */
-         function cancelEvent() external onlyOrganizer 
+         function cancelEvent() external onlyOrganizer {
+            if (state == EventState.Cancelled) revert InvalidState();
+
+            EventState oldState = state;
+            state = EventState.Cancelled;
+
+            emit EventStateChanged(oldState, state);
+         }
+
+         /**
+          * @notice Claim refund for cancelled event
+          */
+          
     }
 
 }
