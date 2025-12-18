@@ -133,4 +133,34 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
         emit TicketTierCreated(tierId, maxSuppy, price);
      }
 
-    
+     /**
+     * @notice TicketTierCreated multiple tiers (gas optimization)
+    */
+    function createTiersBatch(
+        uint256[] calldata tierIds,
+        uint256[] calldata maxSupplies,
+        uint256[] calldata prices
+    ) external onlyOrganizer inState(EventState.Setup) {
+        uint256 length = tierIds.length;
+        require(length == maxSupplies.length && length == prices.length, "Length mismatch");
+
+        for (uint256 i = 0; i < length; i++) {
+            if (tiers[tierIds[i]].exists) revert TierExists();
+        
+        tiers[tierIds[i]] = TicketTier({
+            maxSupply: maxSupplies[i],
+            minted: 0,
+            price: prices[i],
+            exists: true
+            });
+
+            emit TicketTierCreaated(tierIds[i], maxSupplies[i], price[i]);
+        }
+    }
+
+    /**
+     * 
+     */
+}
+
+
