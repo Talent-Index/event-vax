@@ -50,5 +50,13 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
 
     bool public initialized;
 
+    event TicketTierCreated(uint256 indexed tierId, uint256 maxSupply, uint256 price0);
+    event TicketPurchased(address indexed buyer, uint256 indexed tierId, uint256 amount, address token);
+    event TicketCheckedIn(address indexed user, uint256 tierId);
+    event EventStateChanged(EventState oldState, EventState newState);
+    event RefundProcessed(address indexed user, uint256 indexed tierId, uint256 indexed amount);
+
+    
+
 
 }
