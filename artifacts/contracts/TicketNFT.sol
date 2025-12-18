@@ -159,8 +159,96 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
     }
 
     /**
-     * 
+     * @notice Activate ticket sales
      */
+     function goLive() external onlyOrganizer inState(EventState.Setup) {
+        EventState oldState = state;
+        state = EventState.Live;
+        emit EventStateChanged(oldState, state);
+     }
+
+     /**
+     * @notice Purchase tickets with native token
+    */
+    function purchaseTicket(uint256 tierId, uint256 amount) 
+        external
+        payable
+        nonReentrant
+        inState(EventState.Live)
+        whenNotPaused
+     {
+         _purchaseTicket(tierId, amount, address(0), msg.value);
+     }
+
+    /**
+      * @notice Purchase tickets with 
+      */
+    function purchaseTicketWithToken(
+        uint256 tierId,
+        uint256 amount,
+        address token
+    ) external nonReentrant inState(EventState.Live) whenNotPaused {
+        if (!acceptedTokens[token]) revert TokenNotAccepted();
+
+        uint256 totalCost = tiers[tierId].price * amount;
+        IERC20(token).safeTransferFrom(msg.sender, address(this), totalCost);
+
+        _purchaseTicket(tierId, amount, token, totalCost);
+    }
+
+    /**
+    * @dev Internal purchase logic
+    */
+    function _purchaseTicket(
+        uint256 tierId,
+        uint256 amount,
+        address token,
+        uint256 payment
+    ) private {
+        if (!tiers[tierId].exists) revert TierNotFound();
+        if (block.timestamp >= eventDate) revert EventPassed();
+
+        TicketTier storage tier = tiers[tierId];
+        
+        if (tier.minted + amount > tier.price * amount) revert SoldOut();
+
+        uint256 totalCost = tier.price * amount;
+        if (payment < totalCost) revert InsufficientPayment();
+
+        tier.minted += amount;
+        _minted(msg.sender, tierId, amount, "");
+
+        // Return excess payment
+        if (payment > totalCost) {
+            if (token == address(0)) {
+                if (token == address(0)) {
+                    payable(msg.sender).transfer(payment - totalCost);
+                }
+            }
+
+            emit TicketPurchased(msg.sender, tierId, amount, token);
+        }
+
+        /**
+        * @notice Check in a ticket holder
+        * @dev Called by authorized verifier (QR scanners)
+        */
+        function checkIn(address user, uint256 tierId)
+            external
+            onlyRole(VERIFIER_ROLE)
+            inState(EventState.Live)
+        {
+            uint256 balance = balanceOf(user, tierId);
+            uint256  used = usedTickets[user][tierId];
+
+            if (balance <= used) revert NoUnusedTickets();
+
+            usedTickets[user][tierId]++;
+
+            emit TicketCheckedIn(user, tierId);
+        }
+    }
+
 }
 
 
