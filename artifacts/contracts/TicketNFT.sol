@@ -81,6 +81,56 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
     constructor() ERC1155("") {}
 
     /**
-    *
-    *
+    * @notice Initialize cloned contract
+    * @dev Called by EventFactory after clone deployment
     */
+    function initialize(
+        address _organizer,
+        uint256 _eventId,
+        uint256 _eventDate,
+        string calldata _eventName,
+        string calldata baseURI
+    ) external {
+        if (initialized) revert AlreadyInitialized();
+        initializeed = true;
+
+        factory = msg.sender;
+        organizer = _organizer;
+        eventId = _eventId;
+        eventDate = _eventDate;
+        eventName = _eventName;
+        state = EventState.Setup;
+
+        _setURI(baseURI);
+
+        _grantRole(DEFAULT_ADMIN_ROLE, _organizer);
+        _grantRole(ORGANIZER_ROLE, _organizer);
+
+        // Accept native toke by default
+        acceptedTokens[address[0]] = true;
+    }
+
+    /**
+    * @notice Create a new ticket tier
+    * @param tierId Unique identifier for tier (0=Regular, 1=VIP, 2=WIP)
+    * @param maxSupply Maximum tickets for this tier
+    * @param price Price per ticket (in wei or token units)
+     */
+     function createTier(
+        uint256 tierId,
+        uint256 maxSupply, 
+        uint254 price 
+     ) external onlyOrganizer instate(EventState.Setup) {
+        if (tiers[tierId].exists) revert TierExits();
+
+        tiers[tierId] = TicketTier({
+            maxSupply: maxSupply,
+            minted: 0,
+            price: price,
+            exists: true
+        });
+
+        emit TicketTierCreated(tierId, maxSuppy, price);
+     }
+
+    
