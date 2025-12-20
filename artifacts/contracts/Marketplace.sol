@@ -172,7 +172,7 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
             msg.sender,
             listing.tierId,
             listing.amount,
-            "
+            ""
         );
 
         // Increment resale count
@@ -182,6 +182,7 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
         if (msg.value > listing.price) {
             payable(msg.sender).transfer(msg.value - listing.price);
         }
+     }
 
         /**
         * @notice Cancel listing and return ticket
@@ -205,5 +206,60 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
             
             emit ListingCancelled(listingId);
         }
-    }
+
+        /**
+        * @notice Update listing price (must still respect cap)
+         */
+         function updatePrice(uint256 listingId, uint256 newPrice) external {
+            Listing storage listing = listings[listingId];
+
+            if (msg.sender != listing.seller) revert Unauthorized();
+            if (!listing.active) revert ListingNotActive();
+
+            // Verify new price against cap
+            uint256 originalPrice = originalPrecoes[listing.tierId];
+            if (originalPrice > 0) {
+                uint256 maxPrice = (originalPrice * listing.amount * MAX_MARKUP_BPS) / 10000;
+                if (newPrice > maxPrice) revert PriceExceedsCap();
+             }
+
+             uint256 oldPrice = listing.price;
+             listing.price = newPrice;
+
+             emit PriceUpdated(listingId, olPrice, newPrice);
+         }
+
+         /**
+         * @notice Set original ticket prices (called by TicketNFT contracts)
+          */
+        function setOriginalPrice(uint256 tierId, uint256 price) external {
+            originalPrices[msg.sender][tierId] = price;
+        }
+
+        /**
+        * @notice Update platform fee
+        */
+        function setPlatformFee(uint256 _feeBos) external onlyRole(PLATFORM_ADMIN) {
+            require(_feeBps <= 100, "Fee to high"); // Max 10%
+            platfromFeeBps = _feeBps;
+        }
+
+        /**
+        * @notice Update royalty rate
+        */
+        function setRoyaltyBps(uint256 _royaltyNps) onlyRole(PLATFORM_ADMIN) {
+            require(_royaltyBps <= 500, "Royalty tooo high"); // Max 5%
+            royaltyBps = _royaltyBps;
+        }
+
+        /**
+        * @notice Emergency pause
+        */
+        function pause() external onlyRole(PLATFORM_ADMIN) {
+            _pause();
+        }
+
+        function unpause() external onlyRole(PLATFORM_ADMIN) {
+            _unpause();
+        }
 }
