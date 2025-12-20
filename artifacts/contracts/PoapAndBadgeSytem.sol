@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 * @title POAP ((Proof of Attendance Protocol) 
 * @notice ERC721 NFT for event attendees)
  */
-conctract POAP is ERC721, AccessControl {
+contract POAP is ERC721, AccessControl {
     using Counters for Counters.Counter;
 
     bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER");
@@ -89,7 +89,7 @@ conctract POAP is ERC721, AccessControl {
 
             _safeMint(attendees[i], tokenId);
 
-            exit POAPAwarded(tokenId, eventId, attendees[i], metadataHashes[i]);
+            emit POAPAwarded(tokenId, eventId, attendees[i], metadataHashes[i]);
         }
     }
 
@@ -123,7 +123,7 @@ conctract POAP is ERC721, AccessControl {
 contract EventBadge is ERC721, AccessControl {
     using Counters for Counters.Counter;
 
-    bytes32 public constant BADge_ISSUER_ROLE = keccak256("BADGE_ISSUER");
+    bytes32 public constant BADGE_ISSUER_ROLE = keccak256("BADGE_ISSUER");
 
     Counters.Counter private _badgeIds;
 
