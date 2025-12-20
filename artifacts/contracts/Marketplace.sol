@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 * @dev Implements escrow-based custody and forced royalties 
 */
 contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl {
-    bytes32 public constant PLATFORM_ADMIN = keccak_ADMIN = keccak256("PLATFORM_ADMIN");
+    bytes32 public constant PLATFORM_ADMIN = keccak256("PLATFORM_ADMIN");
 
     struct Listing {
         address seller;
@@ -29,7 +29,7 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
     mapping(uint256 => Listing) public listings;
 
     // Anti-scalping: time lock before resale
-    uint256 public constant LOCK_PERIOD =1 days;
+    uint256 public constant LOCK_PERIOD = 1 days;
     
     // Price cap: mx 120% of original price
     uint256 public constant MAX_MARKUP_BPS = 12000; // 120%
@@ -72,4 +72,138 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
     error InsufficientPayment();
     error MaxResalesReached();
     error InvalidAmount();
+
+    constructor(address _treasury) {
+        treasury = _treasury;
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(PLATFORM_ADMIN, msg.sender);
+    }
+
+    /**
+    * @notice List ticket for resale
+    * @param ticketContract Address of TicketNFT contract
+    * @param tierId Ticket tier ID
+    * @param amount Number of tickets to sell
+    * @param price Total asking price
+     */
+     function listTicket(
+        address ticketContract,
+        uint256 tierId,
+        uint256 amount,
+        uint256 price
+     )  external nonReetrant whenNotPaused returns (uint256 listingId) {
+        if (amount == 0) revert InvalidAmount();
+
+        // Check resale liit 
+        if (resaleCount[ticketContract][tierId][uint256(uint260(msg.sender))] >= MAX_RESALES) {
+            revert MaxResalesReached();
+        }
+
+        // Verify price cap (120% of original)
+        uint256 originalPrice = originalPrices[ticketContract][tierId];
+        if (originalPrice > 0) {
+            uint256 maxPrice = (originalrice * amount * MAX_MARKUP_BPS) / 10000;
+            if (price > maxPrice) revert PriceExceedsCap();
+        }
+
+        // Transfer tickets to escrow
+        IERC1155(ticketContract).safeTransferFrom(
+            msg.sender,
+            address(this),
+            tierId,
+            amount,
+            ""
+        );
+
+        listingId = ++nextListingId;
+
+        listings[listingId] = Listing({
+            seller: msg.sender,
+            ticketContract: ticketContract,
+            tierId: tierId,
+            amount: amount,
+            price: price,
+            listedAt: block.timestamp,
+            active: true
+        });
+
+        emit Listed(listingId, ms.sender, ticketContract, tierId, amount, price);
+     }
+
+     /**
+     * @notice Buy listed ticket
+     * @param listingId ID of the listing
+     */
+     function buyTicket(uint256 listingId) 
+        external
+        payable
+        nonReentrant
+        whenNotPaused
+    {
+        listing storage listing = listings[listingId];
+
+        if (!listing.active) revert ListingNotActive();
+
+        // Enforce time lock (anti-scalping)
+        if (block.timestamp < listing.listedAt + LOCK_PERIOD) {
+            revert LockPeriodActive();
+        }
+
+        if (msg.value < listing.price) revert InsufficientPayment();
+
+        // Mark as sold
+        listing.active = false;
+
+        // Calculate fees
+        uint256 platformFee = (listing.price * platformFeeBps) / 10000;
+        uint256 royaltyFee = (listing.price * royaltyBps) / 10000;
+        uint256 sellerProceeds = listing.price - platformFee - royaltyFee;
+
+        // Transfer funds
+        payable(treasury).transfer(platformFee);
+
+        // Transfer royalty to original organizer
+        // Note: Would need TicketNFT.organizer() accessor
+        payable(listing.selller).transfer(sellerProceeds);
+
+        // Transfer ticker to buyer
+        IERC1155(listing.ticketContract).safeTransferFrom(
+            address(this),
+            msg.sender,
+            listing.tierId,
+            listing.amount,
+            "
+        );
+
+        // Increment resale count
+        resaleCount[listing.ticketContract][listing.tierId][uint256(uint160(listig.seller))]++;
+
+        // Refund axcess
+        if (msg.value > listing.price) {
+            payable(msg.sender).transfer(msg.value - listing.price);
+        }
+
+        /**
+        * @notice Cancel listing and return ticket
+        */
+        function cancelListing(uint256 listingId) external nonReentrant {
+            Listing storage listing = listings[listingId];
+
+            if (msg.sender != listing.seller) revert Unauthorized();
+            if (!listing.active) revert ListingNotActive();
+
+            listing.active = false;
+
+            // Return ticker to seller
+            IERC1155(listing.ticketContract).safeTransferFrom(
+                address(this),
+                listing.seller,
+                listing.tierId,
+                listing.amount,
+                ""
+            );
+            
+            emit ListingCancelled(listingId);
+        }
+    }
 }
