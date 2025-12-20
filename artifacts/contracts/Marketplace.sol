@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/securoty/Pausable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 * @notice Secondary market for ticket resale with anti-scalping measures
 * @dev Implements escrow-based custody and forced royalties 
 */
-contract MarketPlace is ERC1155hOLDER, ReentrancyGuard, Pausable, AccessControl {
+contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl {
     bytes32 public constant PLATFORM_ADMIN = keccak_ADMIN = keccak256("PLATFORM_ADMIN");
 
     struct Listing {
@@ -44,7 +44,7 @@ contract MarketPlace is ERC1155hOLDER, ReentrancyGuard, Pausable, AccessControl 
 
     // ticketContract => tierId => original price
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) public resaleCount;
-    uint256 public constant MX_RESALES = 3;
+    uint256 public constant MAX_RESALES = 3;
 
     event Listed(
         uint256 indexed listingId,
