@@ -34,4 +34,35 @@ conctract POAP is ERC721, AccessControl {
 
     error AlreadyClaimed();
     error Unauthorized();
+
+    constructor() ERC721("EventVerse POAP", "EVPOAP") {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    /**
+    * @notice Award POAP to attendee after check-in
+    * @param eventId Event identifier
+    * @param attendee Ticket holder address
+    * @param _metadataHash of encrypted off-chain metadata
+    */
+    function awardPOAP(
+        uint256 eventId,
+        address attendee,
+        bytes32 _metadataHash
+    ) external onlyRole(VERIFIER_ROLE) {
+        if (claimed[eventId][attendee]) revert AlreadyClaimed();
+
+        claimed[eventId][attendee] = true;
+
+        _tokenIds.increment();
+        uint256 tokenId = _tokenIds.current();
+
+        tokenEvent[tokenId] = eventId;
+        metadataHash[tokenId] = _metadataHash;
+
+        _safeMint(attendee, tokenId);
+
+        emit POAPAwarded(tokenId, eventId, attendee, _metadataHash);
+    }
+
 }
