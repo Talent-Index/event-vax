@@ -94,7 +94,34 @@ conctract POAP is ERC721, AccessControl {
     }
 
     /**
-    *
-     */
+    * @dev Souldbound - prevent transfers
+    */
+    function _beforeTokenTransfer(
+        address from,
+        address to, 
+        uint256 tokenId,
+        uint256 batchSize
+    ) internal virtual override {
+        require(from == address(0) || to == address(0), "POAP: souldbound");
+        super._beforeTokenTranfer(from, to, tokenId, batchSize);
+    }
 
+    function supportsInterface(bytes4 interfaceId) 
+        public
+        view
+        override(ERC721, AccessControl)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
+}
+
+/**
+ * @title EventBadge
+ * @notice ERC721 NFT for evet Organizers (host credentials)
+*/
+contract EventBadge is ERC721, AccessControl {
+    using Counters for Counters.Counter;
+
+    bytes32 public constant BAD
 }
