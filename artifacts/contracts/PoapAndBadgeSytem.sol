@@ -65,4 +65,36 @@ conctract POAP is ERC721, AccessControl {
         emit POAPAwarded(tokenId, eventId, attendee, _metadataHash);
     }
 
+    /**
+    * @notice Batch award POAPS (gas optimization)
+    */
+    function awardPOAPBatch(
+        uint256 eventId,
+        address[] calldata attendees,
+        bytes32[] calldata metadataHashes
+    ) external onlyRole(VERIFIER_ROLE) {
+        uint256 length = attendees.length;
+        require(length == metadataHashes.length, "POAP metadata hash Length mismatch");
+
+        for (uint256 i = 0; i < length; i++) {
+            if (claimed[eventId][attendees[i]]) continue;
+
+            claimed[eventId][attendees[i]] = true;
+
+            _tokenIds.increment();
+            uint256 tokenId = _tokenIds.current();
+
+            tokenEvent[tokenId] = eventId;
+            metadataHash[tokenId] = metadataHashes[i];
+
+            _safeMint(attendees[i], tokenId);
+
+            exit POAPAwarded(tokenId, eventId, attendees[i], metadataHashes[i]);
+        }
+    }
+
+    /**
+    *
+     */
+
 }
