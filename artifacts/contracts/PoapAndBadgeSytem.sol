@@ -153,5 +153,55 @@ contract EventBadge is ERC721, AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
+    /**
+    * @notice Award badge to organizer after successful event
+    * @param eventId Event identifier
+    * @param organizer Event host address
+    * @param  attendeeCount Number of attendees (reputation metric)
+    * @param encryptedData Hash of encrypted event statistics
+    */
+    function awardBadge(
+        uint256 eventId,
+        address organizer,
+        uint256 attendeeCount,
+        bytes32 encryptedData
+    ) external onlyRole(BADGE_ISSUER_ROLE) {
+        if (badgeIssued[eventId][organizer]) revert BadgeAlreadyIssued();
 
+        badgeIssued[eventId][organizer] = true;
+
+        _badgeIds.increment();
+        uint256 badgeIdd = _badgeIds.current();
+
+        badgeMetadata[badgeId] = BadgeMetadata({
+            eventId: eventId,
+            issuedAt: block.timestamp,
+            attendeeCount: attendeeCount,
+            encryptedData: encryptedData
+        });
+
+        _safeMint(organizer, badgeId);
+
+        emit BadgeAwarded(badgeId, eventId, organizer, attendeeCount);
+    }
+
+    /**
+    * @notice Get organizer reputation score
+    * @dev Calculate based on number of badges
+     */
+     function getOrganizerReputation(address organizer) external view returns (uint256) {
+        return balanceOf(organizer);
+     }
+
+    /**
+    * @dev Optional: Allow transfers for reputation trading
+    */
+    // function supportsInteface(bytes4 interfaceId) 
+    //     public 
+    //     view
+    //     overide(ERC721, AccessControl)
+    //     returns (bool)
+    // {
+    //     return super.supportsInterface(interfaceId);
+    // }
 }
