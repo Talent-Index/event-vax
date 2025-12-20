@@ -263,7 +263,38 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
          /**
           * @notice Claim refund for cancelled event
           */
-          
+        function claimRefund(uint256 tierId) external nonReentrant inState(EventState.Cancelled) {
+            uint256 balance = balanceOf(msg.sender, tierId);
+            uint256 claimed = refundClaims[msg.sender][tierId];
+
+            if (balance <= claimed) revert RefundNotAvailable();
+
+            uint256 refundAmount = (balance -  claimed) * tiers[tierId].price;
+            refundClaims[msg.sender][tierId] = balance;
+
+            // Burn refunded tickets
+            _burn(msg.sender, tierId, balance - claimed);
+
+            // Process refund (native token only for simplicity)
+            payable(msg.sender).transfer(refundAmount);
+
+            emit RefundProcessed(msg.sender, tierId, refundAmount);
+        }
+
+        /**
+        * @notice Withdraw funds to organizer
+         */
+         function withdraw() external onlyOrganizer nonReentrant {
+            require(state == EventState.Ended, "Event not ended");
+
+            uint256 balance = address(this).balance;
+            payable(organizer).transfer(balance);
+         }
+
+         /** 
+         * @notice Accepted payment tokens
+          */
+          function AddPaymentToken()
     }
 
 }
