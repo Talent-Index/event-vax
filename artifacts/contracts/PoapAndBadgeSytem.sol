@@ -123,5 +123,35 @@ conctract POAP is ERC721, AccessControl {
 contract EventBadge is ERC721, AccessControl {
     using Counters for Counters.Counter;
 
-    bytes32 public constant BAD
+    bytes32 public constant BADge_ISSUER_ROLE = keccak256("BADGE_ISSUER");
+
+    Counters.Counter private _badgeIds;
+
+    struct BadgeMetadata {
+        uint256 eventId;
+        uint256 issuedAt;
+        uint256 attendeeCount;
+        bytes32 encryptedData; // Hash of encrypted event metadata
+    }
+
+    // eventId => organizer => claimed
+    mapping(uint256 => mapping(address => bool)) public badgeIssued;
+
+    // badgeId => metadata
+    mapping(uint256 => BadgeMetadata) public badgeMetadata;
+
+    event BadgeAwarded(
+        uint256 indexed badgeId,
+        uint256 indexed eventId, 
+        address indexed organizer,
+        uint256 attendeeCount
+    );
+
+    error BadgeAlreadyIssued();
+
+    constructor() ERC721("EventVerse Host Badge", "EVbadge") {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+
 }
