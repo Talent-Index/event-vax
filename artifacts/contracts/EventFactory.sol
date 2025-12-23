@@ -3,14 +3,14 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzepppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
 interface ITicketNFT {
     function initialize(
         address organizer,
         uint256 eventId,
         uint256 eventDate,
-        uint256 calldata name,
+        string calldata name,
         string calldata baseURI
     ) external;
 }
@@ -21,14 +21,14 @@ interface ITicketNFT {
  * @dev Uses EIP-1167 minimal proxies for gas-efficient deployment
  */
  
-contract EventFactorry is AccessControl, Pausable {
+contract EventFactory is AccessControl, Pausable {
     bytes32 public constant PLATFORM_ADMIN = keccak256("PLATFORM_ADMIN");
 
     address public immutable ticketImplementation;
     address public treasury;
 
     uint256 public nextEventId;
-    uint256 public platformFeesBps = 250; // 2.5%
+    uint256 public platformFeeBps = 250; // 2.5%
 
     // eventId => ticket Contract address
     mapping(uint256 => address) public eventTicket;
@@ -96,7 +96,7 @@ contract EventFactorry is AccessControl, Pausable {
         eventTicket[eventId] = clone;
         organizerEventCount[msg.sender]++;
 
-        emit EventCreated(evenId, msg.sender, clone, eventDate);
+        emit EventCreated(eventId, msg.sender, clone, eventDate);
     }
 
     /**
@@ -116,7 +116,7 @@ contract EventFactorry is AccessControl, Pausable {
         eventIds = new uint256[](length);
 
         for (uint256 i = 0; i < length; i++) {
-            eventsIds[i] = this.createEvent(
+            eventIds[i] = this.createEvent(
                 eventDates[i],
                 eventNames[i],
                 baseURIs[i]
@@ -156,7 +156,7 @@ function setPlatformFee(uint256 _feeBps) external onlyRole(PLATFORM_ADMIN) {
         _pause();
      }
 
-     function unpause() external onlyRole(PLATFORM_ADMN) {
+     function unpause() external onlyRole(PLATFORM_ADMIN) {
         _unpause();
      }
 }   
