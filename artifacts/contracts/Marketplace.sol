@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 * @notice Secondary market for ticket resale with anti-scalping measures
 * @dev Implements escrow-based custody and forced royalties 
 */
-contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl {
+contract Marketplace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl {
     bytes32 public constant PLATFORM_ADMIN = keccak256("PLATFORM_ADMIN");
 
     struct Listing {
@@ -65,7 +65,7 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
     event ListingCancelled(uint256 indexed listingId);
     event PriceUpdated(uint256 indexed listingId, uint256 oldPrice, uint256 newPrice);
 
-    error ListinNotACTIVE();
+    error ListingNotACTIVE();
     error Unauthorized();
     error LockPeriodActive();
     error PriceExceedsCap();
@@ -91,7 +91,7 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
         uint256 tierId,
         uint256 amount,
         uint256 price
-     )  external nonReetrant whenNotPaused returns (uint256 listingId) {
+     )  external nonReentrant whenNotPaused returns (uint256 listingId) {
         if (amount == 0) revert InvalidAmount();
 
         // Check resale liit 
@@ -102,7 +102,7 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
         // Verify price cap (120% of original)
         uint256 originalPrice = originalPrices[ticketContract][tierId];
         if (originalPrice > 0) {
-            uint256 maxPrice = (originalrice * amount * MAX_MARKUP_BPS) / 10000;
+            uint256 maxPrice = (originalprice * amount * MAX_MARKUP_BPS) / 10000;
             if (price > maxPrice) revert PriceExceedsCap();
         }
 
@@ -127,7 +127,7 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
             active: true
         });
 
-        emit Listed(listingId, ms.sender, ticketContract, tierId, amount, price);
+        emit Listed(listingId, msg.sender, ticketContract, tierId, amount, price);
      }
 
      /**
@@ -140,7 +140,7 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
         nonReentrant
         whenNotPaused
     {
-        listing storage listing = listings[listingId];
+        Listing storage listing = listings[listingId];
 
         if (!listing.active) revert ListingNotActive();
 
@@ -164,7 +164,7 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
 
         // Transfer royalty to original organizer
         // Note: Would need TicketNFT.organizer() accessor
-        payable(listing.selller).transfer(sellerProceeds);
+        payable(listing.seller).transfer(sellerProceeds);
 
         // Transfer ticker to buyer
         IERC1155(listing.ticketContract).safeTransferFrom(
@@ -176,9 +176,9 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
         );
 
         // Increment resale count
-        resaleCount[listing.ticketContract][listing.tierId][uint256(uint160(listig.seller))]++;
+        resaleCount[listing.ticketContract][listing.tierId][uint256(uint160(listing.seller))]++;
 
-        // Refund axcess
+        // Refund excess
         if (msg.value > listing.price) {
             payable(msg.sender).transfer(msg.value - listing.price);
         }
@@ -217,7 +217,7 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
             if (!listing.active) revert ListingNotActive();
 
             // Verify new price against cap
-            uint256 originalPrice = originalPrecoes[listing.tierId];
+            uint256 originalPrice = originalPrices[listing.tierId];
             if (originalPrice > 0) {
                 uint256 maxPrice = (originalPrice * listing.amount * MAX_MARKUP_BPS) / 10000;
                 if (newPrice > maxPrice) revert PriceExceedsCap();
@@ -226,7 +226,7 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
              uint256 oldPrice = listing.price;
              listing.price = newPrice;
 
-             emit PriceUpdated(listingId, olPrice, newPrice);
+             emit PriceUpdated(listingId, oldPrice, newPrice);
          }
 
          /**
@@ -239,7 +239,7 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
         /**
         * @notice Update platform fee
         */
-        function setPlatformFee(uint256 _feeBos) external onlyRole(PLATFORM_ADMIN) {
+        function setPlatformFee(uint256 _feeBps) external onlyRole(PLATFORM_ADMIN) {
             require(_feeBps <= 100, "Fee to high"); // Max 10%
             platfromFeeBps = _feeBps;
         }
@@ -248,7 +248,7 @@ contract MarketPlace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
         * @notice Update royalty rate
         */
         function setRoyaltyBps(uint256 _royaltyNps) onlyRole(PLATFORM_ADMIN) {
-            require(_royaltyBps <= 500, "Royalty tooo high"); // Max 5%
+            require(_royaltyBps <= 500, "Royalty too high"); // Max 5%
             royaltyBps = _royaltyBps;
         }
 
