@@ -37,7 +37,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
         address attendee;
         uint256 tierId;
         uint256 timestamp;
-        address veriifier;
+        address verifier;
         bool poapAwarded;
     }
 
@@ -113,7 +113,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
     * @param eventId Event identifer
     * @param ticketContract Address of TicketNFT contract
     * @param poapContract Address of POAP  contract
-    * @param startTime Check-i start timestamp
+    * @param startTime Check-in start timestamp
     * @param endTime Check-in and timestamp
     */
     function configureEventCheckIn(
@@ -144,6 +144,276 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
     * @param attendee Ticket holder address
     * @param tierId Ticket tier ID
     * @param nonce Unique nonce for this verification
-    * @param timestamp Q
+    * @param timestamp QR generation timestamp
+    * @param deadline QR expiration timestamp
+    * @param signature EIP-712 signature
     */
+    function verifyAndCheckIn(
+        uint256 eventId,
+        address attendee,
+        uint256 tierId,
+        uint256 nonce,
+        uint256 timestamp,
+        bytes calldata signature
+    ) external onlyRole(VERIFIER_ROLE) nonReentrant {
+        EventCheckin storage checkIn = eventCheckInd[eventId];
+
+        // Valid checks
+        if (!checkIns.active) revert CheckInNotActive();
+        if (block.timestamp < checkIn.startTime) revert EventNotStarted();
+        if (block.timestamp > checkIn.endTime) revert EventEnded();
+        if (block.timestamp > deadline) revert DeadlineExpired();
+        if (hasCheckedIn[eventId][attendee]) revert AlreadyCheckIn();
+
+        // Rate limiting
+        if (block.timestamp < lastCheckInTime[attendee] + RATE_LIMIT) {
+            revert RateLimitExceeded();
+        }
+
+        // Nonce check
+        if (nonce <= nonces[attendee]) revert NonceAlreadyUsed();
+
+        // QR code uniqueness check
+        bytes32 qrHash = keccak256(
+            abi.encoderPacked(eventId, attendee, tierId, nonce, timestamp)
+        );
+        if (qrCodeUsed[qrHash]) revert QRCodeAlreadyUsed();
+
+        // Verify signature
+        bytes32 structHash = keccak256(
+            abi.encode(
+                QR_VERIFY_TYPEHASH,
+                eventId, 
+                attendee,
+                tierId,
+                nonce,
+                timestamp,
+                deadline
+            )
+        );
+
+        bytes32 digest = _hashTypedDataV4(structHash);
+        address signer = digest.recover(signature);
+
+        // Signature must be from attendee (self-signed QR)
+        if (signer != attendee) revert InvalidSignature();
+
+        // Verifier ticket ownership
+        ITicketNFT ticketContract = ITicketNFT(checkIn.ticketContract);
+        uint256 ticketBalance = ticketContract.balanceOf(attendee, tierId);
+        if (ticketBalance == 0) revert NotTicketOwned();
+
+        // Mark QR as used
+        qrCodeUsed[qrHash] = true;
+        nonces[attendee] = nonce;
+        lastCheckInTime[attendee] = block.timestamp;
+
+        emit TicketVerified(eventId, attendee, tierId, msg.sender);
+
+        // Execute check-in on TicketNFT
+        ticketContract.checkIn(attendee, tierId);
+
+        // Mark as checked in
+        hasCheckedIn[eventId][attendee] = true;
+        checkIn.checkInCount++;
+
+        // Award POAP is configured
+        bool  poapAwarded = false;
+        if (checkIn.poapContract != address(0)) {
+            IPOAP poapContract = IPOAP (checkIn.poapContract);
+
+            if (!poapContract.claimed(eventId, attendee)) {
+                poapContract.award(eventId, attendee);
+                poapAwarded = true;
+                emit POAPAwarded(eventId, attendee);
+            }
+        }
+
+        // Record check-in
+        checkInHistory[eventId][attendee].push(CheckInRecord({
+            eventId: eventId,
+            attendee: attendee,
+            tierId: tierId,
+            timestamp: block.timestamp,
+            verifier: msg.sender,
+            poapAwarded: poapAwarded
+        }));
+
+        emit CheckInCompleted(eventId, attendee, poapAwarded);
+    }
+
+    /**
+    * @notice Batch check-in (for manual processing)
+    * @dev Used when QR scanning fails or for VIP fast-track
+    */
+    function batchCheckIn(
+        uint256 eventId,
+        address[] calldata attendees,
+        uint256[] calldata tierIds
+    ) external onlyRole(VERIFIER_ROLE) nonReentrant {
+        require(attendee.length == tierIds.length, "Length mismatch");
+
+        EventCheckIn storage checkIn = eventCheckIns[eventsId];
+        if (!checkIn.active) revert CheckInNotActive();
+
+        ITicketNFT ticketContract = ITicketNFT(checkIn.ticketContract);
+        IPOAP poapContract = IPOAP(checkIn.poapContract);
+
+        for (uint256 i =0; i < attendees.length; i++) {
+            address attendee = attendees[i];
+            uint256 tierId = tierIds[i];
+
+            if (hasCheckedIn[eventId][attendee]) continue;
+
+            // Verify ticket ownership
+            if (ticketContract.balanceOf(attendee, tierId) == 0) continue;
+
+            // Execute check-in
+            ticketContract.checkIn(attendee, tierId);
+            hasCheckedIn[eventId][attendee] = true;
+            checkIn.checkInCount++;
+
+            // Award POAP
+            bool poapAwarded = false;
+            if (checkIn.poapContract != address(0)) {
+                if (!poapContract.claimed(eventId, attendee)) {
+                    poapContract.award(eventId, attendee);
+                    poapAwarded = true;
+                }
+            }
+
+            // Record
+            checkInHistory[eventId][attendee].push(CheckInRecord({
+                eventId: eventId,
+                attendee: attendee,
+                tierId: tierId,
+                timestamp: block.timestamp,
+                verifier: msg.sender,
+                poapAwarded: poapAwarded
+            }));
+
+            emit CheckInCompleted(eventId, attendee, tierId, poapAwarded);
+        }
+    }
+
+    /**
+    * @notice Emergency check-in reversal (admin only)
+     */
+     function reverseCheckIn(uint256 eventId, address attendee)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        hasCheckedIn[eventId][attendee] = false;
+        eventCheckIns[eventId].checkInCount--;
+    }
+
+    /**
+    * @notice Active/deactivate event check-in
+    */
+    function setCheckInActive(uint256 eventId, bool active)
+        external
+        onlyRole(EVENT_ADMIN)
+    {
+        eventCheckIns[eventId].active = active;
+    }
+
+    /**
+    * @notice Get check-in status
+     */
+     function getCheckInStatus(uint256 evenyId, address attendee)
+        external
+        view
+        returns (
+            bool checkedIn,
+            uint256 checkInTime,
+            bool poapAwarded
+        )
+    {
+        checkedIn = hasCheckedIn[eventId][attendee];
+
+        CheckInRecord[] memory history = checkInHistory[eventId][attendee];
+        if (history.length > 0) {
+            CheckInRecord memory record = history[history.length -1];
+            checkInTime = record.timestamp;
+            poapAwarded = record.poapAwarded;
+        }
+    }
+
+    /**
+    * @notice Get check-in history for attendee
+    */
+    function getCheckInHistory(uint256 eventId, address attendee)
+        external
+        view 
+        returns (CheckInRecord[] memory)
+    {
+        return checkInHistory[eventId][attendee];
+    }
+
+    /**
+    * @notice Get total check-ins for event
+    */
+    function getEventCheckInCount(uint256 eventId)
+            external
+            view
+            returns (uint256)
+        {
+            return eventCheckIns[eventsId].checkInCount;
+        }
+
+        /**
+        * @notice Verify QR signature without check-in (preview)
+        */
+        function verifyQRSignature(
+            uint256 eventId, 
+            address attendee,
+            uint256 tierId,
+            uint256 nonce,
+            uint256 timestamp,
+            uint256 deadline,
+            bytes calldata signature
+        ) external view returns (bool valid, string memory reason) {
+            if (block.timestamp > deadline) {
+                return (false, "Deadline expired");
+            }
+
+            if (nonce <= nonces[attendee]) {
+                return (false, "Nonce already used");
+            }
+
+            bytes32 qrHash = keccak256(
+                abi.encodePacked(eventId, attendee, tierId, nonce, timestamp)
+            );
+            if (qrCodeUsed[qrHash]) {
+                return (false, "QR already used");
+            }
+
+            bytes32 structHash = keccak256(
+                abi.encode(
+                    QR_VERIFY_TYPEHASH,
+                    eventId,
+                    attendee,
+                    tierId,
+                    nonce,
+                    timestamp,
+                    deadline
+                )
+            )
+
+            bytes32 digest = _hashTypedDataV4(structHash);
+            address signer = digest.recover(signature);
+
+            if (signer != attendee) {
+                return (false, "Invalid signature");
+            }
+            
+            return (true, "Valid");
+        }
+
+        /**
+        * @notice Get current nonce for attendee
+        */
+        function getCurrentNonce(address attendee) external view returns (uint255) {
+            return nonce[attendee];
+        }
 }
