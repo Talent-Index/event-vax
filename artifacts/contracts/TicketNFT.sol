@@ -68,7 +68,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
     error TokenNotAccepted();
     error RefundNotAvailable();
 
-    modifer onlyOrganizer() {
+    modifier onlyOrganizer() {
         require(hasRole(ORGANIZER_ROLE, msg.sender), "Not organizer");
         _;
     }
@@ -92,14 +92,14 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
         string calldata baseURI
     ) external {
         if (initialized) revert AlreadyInitialized();
-        initializeed = true;
+        initialized = true;
 
         factory = msg.sender;
         organizer = _organizer;
         eventId = _eventId;
         eventDate = _eventDate;
         eventName = _eventName;
-        state = EventState.Setup;
+        state = EventStatus.Setup;
 
         _setURI(baseURI);
 
@@ -107,7 +107,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
         _grantRole(ORGANIZER_ROLE, _organizer);
 
         // Accept native toke by default
-        acceptedTokens[address[0]] = true;
+        acceptedTokens[address(0)] = true;
     }
 
     /**
@@ -119,9 +119,9 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
      function createTier(
         uint256 tierId,
         uint256 maxSupply, 
-        uint254 price 
-     ) external onlyOrganizer instate(EventState.Setup) {
-        if (tiers[tierId].exists) revert TierExits();
+        uint256 price 
+     ) external onlyOrganizer instate(EventStatus.Setup) {
+        if (tiers[tierId].exists) revert TierExists();
 
         tiers[tierId] = TicketTier({
             maxSupply: maxSupply,
@@ -130,7 +130,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
             exists: true
         });
 
-        emit TicketTierCreated(tierId, maxSuppy, price);
+        emit TicketTierCreated(tierId, maxSupply, price);
      }
 
      /**
@@ -140,7 +140,11 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
         uint256[] calldata tierIds,
         uint256[] calldata maxSupplies,
         uint256[] calldata prices
-    ) external onlyOrganizer inState(EventState.Setup) {
+    )   external
+         nonReentrant
+         onlyOrganizer
+         inState(EventStatus.Setup)
+    {
         uint256 length = tierIds.length;
         require(length == maxSupplies.length && length == prices.length, "Length mismatch");
 
@@ -154,16 +158,16 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
             exists: true
             });
 
-            emit TicketTierCreaated(tierIds[i], maxSupplies[i], price[i]);
+            emit TicketTierCreated(tierIds[i], maxSupplies[i], prices[i]);
         }
     }
 
     /**
      * @notice Activate ticket sales
      */
-     function goLive() external onlyOrganizer inState(EventState.Setup) {
+     function goLive() external onlyOrganizer inState(EventStatus.Setup) {
         EventState oldState = state;
-        state = EventState.Live;
+        state = EventStatus.Live;
         emit EventStateChanged(oldState, state);
      }
 
@@ -174,7 +178,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
         external
         payable
         nonReentrant
-        inState(EventState.Live)
+        inState(EventStatus.Live)
         whenNotPaused
      {
          _purchaseTicket(tierId, amount, address(0), msg.value);
@@ -187,7 +191,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
         uint256 tierId,
         uint256 amount,
         address token
-    ) external nonReentrant inState(EventState.Live) whenNotPaused {
+    ) external nonReentrant inState(EventStatus.Live) whenNotPaused {
         if (!acceptedTokens[token]) revert TokenNotAccepted();
 
         uint256 totalCost = tiers[tierId].price * amount;
@@ -210,24 +214,21 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
 
         TicketTier storage tier = tiers[tierId];
         
-        if (tier.minted + amount > tier.price * amount) revert SoldOut();
+        if (tier.minted + amount > tier.maxSupply) revert SoldOut();
 
         uint256 totalCost = tier.price * amount;
         if (payment < totalCost) revert InsufficientPayment();
 
         tier.minted += amount;
-        _minted(msg.sender, tierId, amount, "");
+        _mint(msg.sender, tierId, amount, "");
 
         // Return excess payment
-        if (payment > totalCost) {
-            if (token == address(0)) {
-                if (token == address(0)) {
+        if (payment > totalCost && token == address(0)) {
                     payable(msg.sender).transfer(payment - totalCost);
-                }
             }
-
             emit TicketPurchased(msg.sender, tierId, amount, token);
         }
+    
 
         /**
         * @notice Check in a ticket holder
@@ -235,8 +236,9 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
         */
         function checkIn(address user, uint256 tierId)
             external
+            nonReentrant
             onlyRole(VERIFIER_ROLE)
-            inState(EventState.Live)
+            inState(EventStatus.Live)
         {
             uint256 balance = balanceOf(user, tierId);
             uint256  used = usedTickets[user][tierId];
@@ -252,10 +254,10 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
         * @notice Cancel event and enable refunds
          */
          function cancelEvent() external onlyOrganizer {
-            if (state == EventState.Cancelled) revert InvalidState();
+            if (state == EventStatus.Cancelled) revert InvalidState();
 
             EventState oldState = state;
-            state = EventState.Cancelled;
+            state = EventStatus.Cancelled;
 
             emit EventStateChanged(oldState, state);
          }
@@ -263,7 +265,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
          /**
           * @notice Claim refund for cancelled event
           */
-        function claimRefund(uint256 tierId) external nonReentrant inState(EventState.Cancelled) {
+        function claimRefund(uint256 tierId) external nonReentrant inState(EventStatus.Cancelled) {
             uint256 balance = balanceOf(msg.sender, tierId);
             uint256 claimed = refundClaims[msg.sender][tierId];
 
@@ -276,7 +278,8 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
             _burn(msg.sender, tierId, balance - claimed);
 
             // Process refund (native token only for simplicity)
-            payable(msg.sender).transfer(refundAmount);
+            (bool success, ) = payable(msg.sender).call{value: refundAmount}("");
+            require(success, "Refund failed");
 
             emit RefundProcessed(msg.sender, tierId, refundAmount);
         }
@@ -285,7 +288,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
         * @notice Withdraw funds to organizer
          */
          function withdraw() external onlyOrganizer nonReentrant {
-            require(state == EventState.Ended, "Event not ended");
+            require(state == EventStatus.Ended, "Event not ended");
 
             uint256 balance = address(this).balance;
             payable(organizer).transfer(balance);
@@ -294,16 +297,16 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
          /** 
          * @notice Accepted payment tokens
           */
-          function addPaymentToken()(address token) external onlyOrganizer {
+          function addPaymentToken(address token) external onlyOrganizer {
              acceptedTokens[token] = true;
           }
 
           /**
           * @notice Mark event as ended
           */
-          function endEvent() external onlyOrganizer inState(EventState.Live) {
+          function endEvent() external onlyOrganizer inState(EventStatus.Live) {
              EventState oldState = state;
-             state = EventState.Ended;
+             state = EventStatus.Ended;
              emit EventStateChanged(oldState, state);
           }
 
@@ -315,10 +318,8 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
           }
 
           function unpause() external onlyOrganizer {
-            _unpause():
+            _unpause();
           }
-    }
-
 }
 
 
