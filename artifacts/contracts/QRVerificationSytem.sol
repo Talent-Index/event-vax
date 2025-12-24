@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.SOL";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface ITicketNFT {
     function balanceOf(address account, uint256 id) external view returns (uint256);
@@ -85,7 +85,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
     event CheckInCompleted(
         uint256 indexed eventId,
         address indexed attendee,
-        uint255 tierId,
+        uint256 tierId,
         bool poapAwarded
     );
 
@@ -156,14 +156,14 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
         uint256 timestamp,
         bytes calldata signature
     ) external onlyRole(VERIFIER_ROLE) nonReentrant {
-        EventCheckin storage checkIn = eventCheckInd[eventId];
+        EventCheckIn storage checkIn = eventCheckIn[eventId];
 
         // Valid checks
-        if (!checkIns.active) revert CheckInNotActive();
+        if (!checkIn.active) revert CheckInNotActive();
         if (block.timestamp < checkIn.startTime) revert EventNotStarted();
         if (block.timestamp > checkIn.endTime) revert EventEnded();
         if (block.timestamp > deadline) revert DeadlineExpired();
-        if (hasCheckedIn[eventId][attendee]) revert AlreadyCheckIn();
+        if (hasCheckedIn[eventId][attendee]) revert AlreadyCheckedIn();
 
         // Rate limiting
         if (block.timestamp < lastCheckInTime[attendee] + RATE_LIMIT) {
@@ -201,7 +201,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
         // Verifier ticket ownership
         ITicketNFT ticketContract = ITicketNFT(checkIn.ticketContract);
         uint256 ticketBalance = ticketContract.balanceOf(attendee, tierId);
-        if (ticketBalance == 0) revert NotTicketOwned();
+        if (ticketBalance == 0) revert NoTicketOwned();
 
         // Mark QR as used
         qrCodeUsed[qrHash] = true;
@@ -253,7 +253,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
     ) external onlyRole(VERIFIER_ROLE) nonReentrant {
         require(attendee.length == tierIds.length, "Length mismatch");
 
-        EventCheckIn storage checkIn = eventCheckIns[eventsId];
+        EventCheckIn storage checkIn = eventCheckIns[eventId];
         if (!checkIn.active) revert CheckInNotActive();
 
         ITicketNFT ticketContract = ITicketNFT(checkIn.ticketContract);
@@ -320,7 +320,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
     /**
     * @notice Get check-in status
      */
-     function getCheckInStatus(uint256 evenyId, address attendee)
+     function getCheckInStatus(uint256 evenId, address attendee)
         external
         view
         returns (
@@ -358,7 +358,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
             view
             returns (uint256)
         {
-            return eventCheckIns[eventsId].checkInCount;
+            return eventCheckIns[eventId].checkInCount;
         }
 
         /**
@@ -398,7 +398,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
                     timestamp,
                     deadline
                 )
-            )
+            );
 
             bytes32 digest = _hashTypedDataV4(structHash);
             address signer = digest.recover(signature);
@@ -413,7 +413,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
         /**
         * @notice Get current nonce for attendee
         */
-        function getCurrentNonce(address attendee) external view returns (uint255) {
-            return nonce[attendee];
+        function getCurrentNonce(address attendee) external view returns (uint256) {
+            return nonces[attendee];
         }
 }
