@@ -36,8 +36,12 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
     address public factory;
     address public organizer;
 
+    uint256 public eventId;
+    uint256 public eventDate;
+    string public eventName;
+
     // Supported payment tokens (address(0) = native token)
-    mapping(uint256 => bool) public acceptedTokens;
+    mapping(address => bool) public acceptedTokens;
 
     // tierdId => TicketTier
     mapping(uint256 => TicketTier) public tiers;
@@ -53,7 +57,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
     event TicketTierCreated(uint256 indexed tierId, uint256 maxSupply, uint256 price0);
     event TicketPurchased(address indexed buyer, uint256 indexed tierId, uint256 amount, address token);
     event TicketCheckedIn(address indexed user, uint256 tierId);
-    event EventStateChanged(EventState oldState, EventState newState);
+    event EventStateChanged(EventStatus oldState, EventStatus newState);
     event RefundProcessed(address indexed user, uint256 indexed tierId, uint256 indexed amount);
 
     error AlreadyInitialized();
@@ -73,10 +77,12 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
         _;
     }
 
-    modifier inState(EventState _state) {
+    modifier inState(EventStatus _state) {
         if (state != _state) revert InvalidState();
         _;
     }
+
+    EventStatus public state;
 
     constructor() ERC1155("") {}
 
@@ -120,7 +126,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
         uint256 tierId,
         uint256 maxSupply, 
         uint256 price 
-     ) external onlyOrganizer instate(EventStatus.Setup) {
+     ) external onlyOrganizer inState(EventStatus.Setup) {
         if (tiers[tierId].exists) revert TierExists();
 
         tiers[tierId] = TicketTier({
@@ -166,7 +172,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
      * @notice Activate ticket sales
      */
      function goLive() external onlyOrganizer inState(EventStatus.Setup) {
-        EventState oldState = state;
+        EventStatus oldState = state;
         state = EventStatus.Live;
         emit EventStateChanged(oldState, state);
      }
@@ -256,7 +262,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
          function cancelEvent() external onlyOrganizer {
             if (state == EventStatus.Cancelled) revert InvalidState();
 
-            EventState oldState = state;
+            EventStatus oldState = state;
             state = EventStatus.Cancelled;
 
             emit EventStateChanged(oldState, state);
@@ -305,7 +311,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
           * @notice Mark event as ended
           */
           function endEvent() external onlyOrganizer inState(EventStatus.Live) {
-             EventState oldState = state;
+             EventStatus oldState = state;
              state = EventStatus.Ended;
              emit EventStateChanged(oldState, state);
           }
