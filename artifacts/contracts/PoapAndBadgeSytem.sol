@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-jimport "@openzeppelin/contracts/token/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
@@ -103,7 +103,7 @@ contract POAP is ERC721, AccessControl {
         uint256 batchSize
     ) internal virtual override {
         require(from == address(0) || to == address(0), "POAP: souldbound");
-        super._beforeTokenTranfer(from, to, tokenId, batchSize);
+        super._beforeTokenTransfer(from, to, tokenId, batchSize);
     }
 
     function supportsInterface(bytes4 interfaceId) 
@@ -171,7 +171,7 @@ contract EventBadge is ERC721, AccessControl {
         badgeIssued[eventId][organizer] = true;
 
         _badgeIds.increment();
-        uint256 badgeIdd = _badgeIds.current();
+        uint256 badgeId = _badgeIds.current();
 
         badgeMetadata[badgeId] = BadgeMetadata({
             eventId: eventId,
