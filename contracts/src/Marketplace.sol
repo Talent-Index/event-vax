@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
@@ -43,6 +43,9 @@ contract Marketplace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
     address public treasury;
 
     // ticketContract => tierId => original price
+    mapping(address => mapping(uint256 => uint256)) public originalPrices;
+
+    // ticketContract => tierId => user => resale count
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) public resaleCount;
     uint256 public constant MAX_RESALES = 3;
 
@@ -65,7 +68,7 @@ contract Marketplace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
     event ListingCancelled(uint256 indexed listingId);
     event PriceUpdated(uint256 indexed listingId, uint256 oldPrice, uint256 newPrice);
 
-    error ListingNotACTIVE();
+    error ListingNotActive();
     error Unauthorized();
     error LockPeriodActive();
     error PriceExceedsCap();
@@ -95,14 +98,14 @@ contract Marketplace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
         if (amount == 0) revert InvalidAmount();
 
         // Check resale liit 
-        if (resaleCount[ticketContract][tierId][uint256(uint260(msg.sender))] >= MAX_RESALES) {
+        if (resaleCount[ticketContract][tierId][uint256(uint160(msg.sender))] >= MAX_RESALES) {
             revert MaxResalesReached();
         }
 
         // Verify price cap (120% of original)
         uint256 originalPrice = originalPrices[ticketContract][tierId];
         if (originalPrice > 0) {
-            uint256 maxPrice = (originalprice * amount * MAX_MARKUP_BPS) / 10000;
+            uint256 maxPrice = (originalPrice * amount * MAX_MARKUP_BPS) / 10000;
             if (price > maxPrice) revert PriceExceedsCap();
         }
 
@@ -217,7 +220,7 @@ contract Marketplace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
             if (!listing.active) revert ListingNotActive();
 
             // Verify new price against cap
-            uint256 originalPrice = originalPrices[listing.tierId];
+            uint256 originalPrice = originalPrices[listing.ticketContract][listing.tierId];
             if (originalPrice > 0) {
                 uint256 maxPrice = (originalPrice * listing.amount * MAX_MARKUP_BPS) / 10000;
                 if (newPrice > maxPrice) revert PriceExceedsCap();
@@ -240,14 +243,14 @@ contract Marketplace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
         * @notice Update platform fee
         */
         function setPlatformFee(uint256 _feeBps) external onlyRole(PLATFORM_ADMIN) {
-            require(_feeBps <= 100, "Fee to high"); // Max 10%
-            platfromFeeBps = _feeBps;
+            require(_feeBps <= 1000, "Fee too high"); // Max 10%
+            platformFeeBps = _feeBps;
         }
 
         /**
         * @notice Update royalty rate
         */
-        function setRoyaltyBps(uint256 _royaltyNps) onlyRole(PLATFORM_ADMIN) {
+        function setRoyaltyBps(uint256 _royaltyBps) external onlyRole(PLATFORM_ADMIN) {
             require(_royaltyBps <= 500, "Royalty too high"); // Max 5%
             royaltyBps = _royaltyBps;
         }
@@ -261,5 +264,14 @@ contract Marketplace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
 
         function unpause() external onlyRole(PLATFORM_ADMIN) {
             _unpause();
+        }
+
+        function supportsInterface(bytes4 interfaceId)
+            public
+            view
+            override(ERC1155Holder, AccessControl)
+            returns (bool)
+        {
+            return super.supportsInterface(interfaceId);
         }
 }

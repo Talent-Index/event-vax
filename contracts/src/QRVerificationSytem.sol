@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 interface ITicketNFT {
     function balanceOf(address account, uint256 id) external view returns (uint256);
@@ -41,7 +41,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
         bool poapAwarded;
     }
 
-    struct EventChecking {
+    struct EventCheckIn {
         address ticketContract;
         address poapContract;
         bool active;
@@ -89,6 +89,8 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
         bool poapAwarded
     );
 
+    event POAPAwarded(uint256 indexed eventId, address indexed attendee);
+
     error EventNotConfigured();
     error CheckInNotActive();
     error InvalidSignature();
@@ -125,7 +127,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
     ) external onlyRole(EVENT_ADMIN) {
         if (startTime >= endTime) revert InvalidTimestamp();
 
-        eventCheckIns(eventId) = EventCheckIn({
+        eventCheckIns[eventId] = EventCheckIn({
             ticketContract: ticketContract,
             poapContract: poapContract,
             active: true,
@@ -145,7 +147,6 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
     * @param tierId Ticket tier ID
     * @param nonce Unique nonce for this verification
     * @param timestamp QR generation timestamp
-    * @param deadline QR expiration timestamp
     * @param signature EIP-712 signature
     */
     function verifyAndCheckIn(
@@ -154,9 +155,10 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
         uint256 tierId,
         uint256 nonce,
         uint256 timestamp,
+        uint256 deadline,
         bytes calldata signature
     ) external onlyRole(VERIFIER_ROLE) nonReentrant {
-        EventCheckIn storage checkIn = eventCheckIn[eventId];
+        EventCheckIn storage checkIn = eventCheckIns[eventId];
 
         // Valid checks
         if (!checkIn.active) revert CheckInNotActive();
@@ -175,7 +177,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
 
         // QR code uniqueness check
         bytes32 qrHash = keccak256(
-            abi.encoderPacked(eventId, attendee, tierId, nonce, timestamp)
+            abi.encodePacked(eventId, attendee, tierId, nonce, timestamp)
         );
         if (qrCodeUsed[qrHash]) revert QRCodeAlreadyUsed();
 
@@ -200,8 +202,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
 
         // Verifier ticket ownership
         ITicketNFT ticketContract = ITicketNFT(checkIn.ticketContract);
-        uint256 ticketBalance = ticketContract.balanceOf(attendee, tierId);
-        if (ticketBalance == 0) revert NoTicketOwned();
+        if (ticketContract.balanceOf(attendee, tierId) == 0) revert NoTicketOwned();
 
         // Mark QR as used
         qrCodeUsed[qrHash] = true;
@@ -239,7 +240,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
             poapAwarded: poapAwarded
         }));
 
-        emit CheckInCompleted(eventId, attendee, poapAwarded);
+        emit CheckInCompleted(eventId, attendee, tierId, poapAwarded);
     }
 
     /**
@@ -251,7 +252,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
         address[] calldata attendees,
         uint256[] calldata tierIds
     ) external onlyRole(VERIFIER_ROLE) nonReentrant {
-        require(attendee.length == tierIds.length, "Length mismatch");
+        require(attendees.length == tierIds.length, "Length mismatch");
 
         EventCheckIn storage checkIn = eventCheckIns[eventId];
         if (!checkIn.active) revert CheckInNotActive();
@@ -320,7 +321,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
     /**
     * @notice Get check-in status
      */
-     function getCheckInStatus(uint256 evenId, address attendee)
+     function getCheckInStatus(uint256 eventId, address attendee)
         external
         view
         returns (

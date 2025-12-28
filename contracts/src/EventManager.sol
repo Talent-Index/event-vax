@@ -2,8 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-
+import "@openzeppelin/contracts/utils/Pausable.sol";
 /**
  * @title EventManager
  * @notice Manages event lifecycle and metadata
@@ -35,7 +34,7 @@ contract EventManager is AccessControl, Pausable {
     mapping(uint256 => EventDetails) public events;
 
     // organizer => eventId[]
-    mapping(address => uint256[]) public organizersEvents;
+    mapping(address => uint256[]) public organizerEvents;
 
     // Total event count
     uint256 public totalEvents;
@@ -63,7 +62,7 @@ contract EventManager is AccessControl, Pausable {
         uint256 endTime
     );
 
-    error EventNoutFound();
+    error EventNotFound();
     error InvalidTransition();
     error Unauthorized();
     error InvalidTimestamp();
@@ -111,7 +110,7 @@ contract EventManager is AccessControl, Pausable {
    */
 
     function activateEvent(uint256 eventId) external {
-        EventDetails storage eventDetails = events[eventId];
+        EventDetails storage ev = events[eventId];
 
         if (!ev.exists) revert EventNotFound();
         if (msg.sender != ev.organizer) revert Unauthorized();
@@ -137,7 +136,7 @@ contract EventManager is AccessControl, Pausable {
         ev.state = EventState.Ended;
         stateTransitions[eventId][EventState.Ended] = block.timestamp;
 
-        emit EventStateChanged(eventId, previousState, EventState.Ended);
+        emit EventStateChanged(eventId, previouseState, EventState.Ended);
     } 
     
     /**
@@ -151,6 +150,10 @@ contract EventManager is AccessControl, Pausable {
             revert Unauthorized();
         }
         if (ev.state == EventState.Ended) revert InvalidTransition();
+
+        EventState previouseState = ev.state;
+        ev.state = EventState.Cancelled;
+        stateTransitions[eventId][EventState.Cancelled] = block.timestamp;
 
         emit EventStateChanged(eventId, previouseState, EventState.Cancelled);
     }
@@ -211,7 +214,7 @@ contract EventManager is AccessControl, Pausable {
         view
         returns (uint256[] memory)
     {
-        return organizerEvents[organizer].length;
+        return organizerEvents[organizer];
     }
 
     /**

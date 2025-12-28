@@ -1,20 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 /**
 * @title POAP ((Proof of Attendance Protocol) 
 * @notice ERC721 NFT for event attendees)
  */
 contract POAP is ERC721, AccessControl {
-    using Counters for Counters.Counter;
-
     bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER");
 
-    Counters.Counter private _tokenIds;
+    uint256 private _nextTokenId;
 
     // eventId => attendee => claimed 
     mapping(uint256 => mapping(address => bool)) public claimed;
@@ -54,8 +51,7 @@ contract POAP is ERC721, AccessControl {
 
         claimed[eventId][attendee] = true;
 
-        _tokenIds.increment();
-        uint256 tokenId = _tokenIds.current();
+        uint256 tokenId = ++_nextTokenId;
 
         tokenEvent[tokenId] = eventId;
         metadataHash[tokenId] = _metadataHash;
@@ -74,36 +70,37 @@ contract POAP is ERC721, AccessControl {
         bytes32[] calldata metadataHashes
     ) external onlyRole(VERIFIER_ROLE) {
         uint256 length = attendees.length;
-        require(length == metadataHashes.length, "POAP metadata hash Length mismatch");
+        require(length == metadataHashes.length, "LENGTH_MISMATCH");
 
         for (uint256 i = 0; i < length; i++) {
-            if (claimed[eventId][attendees[i]]) continue;
+            address attendee = attendees[i];
+            if (claimed[eventId][attendee]) continue;
 
-            claimed[eventId][attendees[i]] = true;
+            claimed[eventId][attendee] = true;
 
-            _tokenIds.increment();
-            uint256 tokenId = _tokenIds.current();
+            uint256 tokenId = ++_nextTokenId;
 
             tokenEvent[tokenId] = eventId;
             metadataHash[tokenId] = metadataHashes[i];
 
-            _safeMint(attendees[i], tokenId);
+            _safeMint(attendee, tokenId);
 
-            emit POAPAwarded(tokenId, eventId, attendees[i], metadataHashes[i]);
+            emit POAPAwarded(tokenId, eventId, attendee, metadataHashes[i]);
         }
     }
 
     /**
     * @dev Souldbound - prevent transfers
     */
-    function _beforeTokenTransfer(
-        address from,
-        address to, 
-        uint256 tokenId,
-        uint256 batchSize
-    ) internal virtual override {
-        require(from == address(0) || to == address(0), "POAP: souldbound");
-        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+    function _update(address to, uint256 tokenId, address auth)
+        internal
+        virtual
+        override
+        returns (address)
+    {
+        address from = _ownerOf(tokenId);
+        require(from == address(0) || to == address(0), "POAP: soulbound");
+        return super._update(to, tokenId, auth);
     }
 
     function supportsInterface(bytes4 interfaceId) 
@@ -121,11 +118,9 @@ contract POAP is ERC721, AccessControl {
  * @notice ERC721 NFT for evet Organizers (host credentials)
 */
 contract EventBadge is ERC721, AccessControl {
-    using Counters for Counters.Counter;
-
     bytes32 public constant BADGE_ISSUER_ROLE = keccak256("BADGE_ISSUER");
 
-    Counters.Counter private _badgeIds;
+    uint256 private _nextBadgeId;
 
     struct BadgeMetadata {
         uint256 eventId;
@@ -157,7 +152,7 @@ contract EventBadge is ERC721, AccessControl {
     * @notice Award badge to organizer after successful event
     * @param eventId Event identifier
     * @param organizer Event host address
-    * @param  attendeeCount Number of attendees (reputation metric)
+    * @param attendeeCount Number of attendees (reputation metric)
     * @param encryptedData Hash of encrypted event statistics
     */
     function awardBadge(
@@ -170,8 +165,7 @@ contract EventBadge is ERC721, AccessControl {
 
         badgeIssued[eventId][organizer] = true;
 
-        _badgeIds.increment();
-        uint256 badgeId = _badgeIds.current();
+        uint256 badgeId = ++_nextBadgeId;
 
         badgeMetadata[badgeId] = BadgeMetadata({
             eventId: eventId,
@@ -189,19 +183,23 @@ contract EventBadge is ERC721, AccessControl {
     * @notice Get organizer reputation score
     * @dev Calculate based on number of badges
      */
-     function getOrganizerReputation(address organizer) external view returns (uint256) {
+     function getOrganizerReputation(address organizer) 
+        external
+        view 
+        returns (uint256)
+    {
         return balanceOf(organizer);
-     }
+    }
 
     /**
     * @dev Optional: Allow transfers for reputation trading
     */
-    // function supportsInteface(bytes4 interfaceId) 
-    //     public 
-    //     view
-    //     overide(ERC721, AccessControl)
-    //     returns (bool)
-    // {
-    //     return super.supportsInterface(interfaceId);
-    // }
+    function supportsInterface(bytes4 interfaceId) 
+        public 
+        view
+        override(ERC721, AccessControl)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
 }

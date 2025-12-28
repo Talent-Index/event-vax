@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzappelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
 * @title MetadataRegistry
@@ -20,14 +20,14 @@ contract MetadataRegistry is AccessControl {
 
     struct Metadata {
         string ipfsHash;
-        bytes contentHash; // SHA256 of content
+        bytes32 contentHash; // SHA256 of content
         uint256 timestamp;
         address updatedBy;
         bool frozen;
     }
 
-    // entityTyoe => entityId => Metadata
-    mapping(MetadataType => mapping(uint256 => Metadata)) public _metadata;
+    // entityType => entityId => Metadata
+    mapping(MetadataType => mapping(uint256 => Metadata)) public metadata;
 
     // contentHash => exists (prevent duplicates)
     mapping(bytes32 => bool) public contentHashExists;
@@ -49,7 +49,9 @@ contract MetadataRegistry is AccessControl {
         string newIpfsHash
     );
 
-    error MetadataFrozen();
+    event MetadataFrozen(MetadataType indexed entityType, uint256 indexed entityId);
+
+    error MetadataAlreadyFrozen();
     error InvalidContentHash();
     error MetadataNotFound();
 
@@ -73,7 +75,7 @@ contract MetadataRegistry is AccessControl {
     ) external onlyRole(METADATA_ADMIN) {
         Metadata storage meta = metadata[entityType][entityId];
 
-        if (meta.frozen) revert MetadataFrozen();
+        if (meta.frozen) revert MetadataAlreadyFrozen();
         if (contentHash == bytes32(0)) revert InvalidContentHash();
 
         // Save to history if Updating
@@ -103,7 +105,7 @@ contract MetadataRegistry is AccessControl {
      * @notice Batch set metadata
      */
     function batchSetMetadata(
-        MetadataTyoe[] calldata entityTypes,
+        MetadataType[] calldata entityTypes,
         uint256[] calldata entityIds,
         string[] calldata ipfsHashes,
         bytes32[] calldata contentHashes

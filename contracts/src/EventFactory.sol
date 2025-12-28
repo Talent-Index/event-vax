@@ -3,8 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-
+import "@openzeppelin/contracts/utils/Pausable.sol";
 interface ITicketNFT {
     function initialize(
         address organizer,
@@ -55,7 +54,7 @@ contract EventFactory is AccessControl, Pausable {
         address _ticketImplementation,
         address _treasury
     ) {
-        if (_ticketImplementation == address(0)) revert InvalidImpleentation();
+        if (_ticketImplementation == address(0)) revert InvalidImplementation();
         if (_treasury == address(0)) revert InvalidTreasury();
 
         ticketImplementation = _ticketImplementation;
@@ -85,7 +84,7 @@ contract EventFactory is AccessControl, Pausable {
         address clone = Clones.clone(ticketImplementation);
 
         // Initialize the clone
-        ITicketNFT(clone).initalize(
+        ITicketNFT(clone).initialize(
             msg.sender,
             eventId,
             eventDate,
