@@ -7,6 +7,10 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
+interface ITicketNFT {
+    function organizer() external view returns (address);
+}
+
 /**
 * @title Marketplace
 * @notice Secondary market for ticket resale with anti-scalping measures
@@ -97,7 +101,7 @@ contract Marketplace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
      )  external nonReentrant whenNotPaused returns (uint256 listingId) {
         if (amount == 0) revert InvalidAmount();
 
-        // Check resale liit 
+        // Check resale limit 
         if (resaleCount[ticketContract][tierId][uint256(uint160(msg.sender))] >= MAX_RESALES) {
             revert MaxResalesReached();
         }
@@ -166,10 +170,11 @@ contract Marketplace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
         payable(treasury).transfer(platformFee);
 
         // Transfer royalty to original organizer
-        // Note: Would need TicketNFT.organizer() accessor
+        address organizer = ITicketNFT(listing.ticketContract).organizer();
+        payable(organizer).transfer(royaltyFee);
         payable(listing.seller).transfer(sellerProceeds);
 
-        // Transfer ticker to buyer
+        // Transfer ticket to buyer
         IERC1155(listing.ticketContract).safeTransferFrom(
             address(this),
             msg.sender,
@@ -198,7 +203,7 @@ contract Marketplace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
 
             listing.active = false;
 
-            // Return ticker to seller
+            // Return ticket to seller
             IERC1155(listing.ticketContract).safeTransferFrom(
                 address(this),
                 listing.seller,

@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
 * @title MetadataRegistry
-* @notice Centralized IPFS hash storagee and verification
+* @notice Centralized IPFS hash storage and verification
 * @dev Ensures metadata integrity across the platform
 */
 contract MetadataRegistry is AccessControl {
@@ -78,7 +78,7 @@ contract MetadataRegistry is AccessControl {
         if (meta.frozen) revert MetadataAlreadyFrozen();
         if (contentHash == bytes32(0)) revert InvalidContentHash();
 
-        // Save to history if Updating
+        // Save to history if updating
         if (bytes(meta.ipfsHash).length > 0) {
             metadataHistory[entityType][entityId].push(meta);
 
@@ -170,7 +170,7 @@ contract MetadataRegistry is AccessControl {
     }
 
     /**
-     * @notice Get metdata history
+     * @notice Get metadata history
      */
     function getMetadataHistory(MetadataType entityType, uint256 entityId)
         external
