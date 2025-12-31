@@ -12,7 +12,7 @@ interface ITicketNFT {
 }
 
 interface IPOAP {
-    function award(uint256 eventId, address attendee) external;
+    function awardPOAP(uint256 eventId, address attendee, bytes32 metadataHash) external;
     function claimed(uint256 eventId, address attendee) external view returns (bool);
 }
 
@@ -59,13 +59,13 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
     // eventId => attendee => checked in
     mapping(uint256 => mapping(address => bool)) public hasCheckedIn;
 
-    // Nonce tracking per attendee (replay protetion)
+    // Nonce tracking per attendee (replay protection)
     mapping(address => uint256) public nonces;
 
     // QR code hash => used (prevent same QR reuse)
     mapping(bytes32 => bool) public qrCodeUsed;
 
-    // Rate limiting: attendee => last check-in tie
+    // Rate limiting: attendee => last check-in time
     mapping(address => uint256) public lastCheckInTime;
     uint256 public constant RATE_LIMIT = 10 seconds;
 
@@ -112,11 +112,11 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
 
     /**
     * @notice Configure check-in for an event
-    * @param eventId Event identifer
+    * @param eventId Event identifier
     * @param ticketContract Address of TicketNFT contract
     * @param poapContract Address of POAP  contract
     * @param startTime Check-in start timestamp
-    * @param endTime Check-in and timestamp
+    * @param endTime Check-in end timestamp
     */
     function configureEventCheckIn(
         uint256 eventId,
@@ -142,7 +142,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
     /**
     * @notice Verify QR code and complete check-in
     * @dev Main entry point for scanner apps
-    * @param eventId Event idenitifier
+    * @param eventId Event identifier
     * @param attendee Ticket holder address
     * @param tierId Ticket tier ID
     * @param nonce Unique nonce for this verification
@@ -160,7 +160,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
     ) external onlyRole(VERIFIER_ROLE) nonReentrant {
         EventCheckIn storage checkIn = eventCheckIns[eventId];
 
-        // Valid checks
+        // Validity checks
         if (!checkIn.active) revert CheckInNotActive();
         if (block.timestamp < checkIn.startTime) revert EventNotStarted();
         if (block.timestamp > checkIn.endTime) revert EventEnded();
@@ -200,7 +200,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
         // Signature must be from attendee (self-signed QR)
         if (signer != attendee) revert InvalidSignature();
 
-        // Verifier ticket ownership
+        // Verify ticket ownership
         ITicketNFT ticketContract = ITicketNFT(checkIn.ticketContract);
         if (ticketContract.balanceOf(attendee, tierId) == 0) revert NoTicketOwned();
 
@@ -218,13 +218,14 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
         hasCheckedIn[eventId][attendee] = true;
         checkIn.checkInCount++;
 
-        // Award POAP is configured
+        // Award POAP if configured
         bool  poapAwarded = false;
         if (checkIn.poapContract != address(0)) {
             IPOAP poapContract = IPOAP (checkIn.poapContract);
 
             if (!poapContract.claimed(eventId, attendee)) {
-                poapContract.award(eventId, attendee);
+                bytes32 metadataHash = keccak256(abi.encodePacked(eventId, attendee, block.timestamp));
+                poapContract.awardPOAP(eventId, attendee, metadataHash);
                 poapAwarded = true;
                 emit POAPAwarded(eventId, attendee);
             }
@@ -260,7 +261,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
         ITicketNFT ticketContract = ITicketNFT(checkIn.ticketContract);
         IPOAP poapContract = IPOAP(checkIn.poapContract);
 
-        for (uint256 i =0; i < attendees.length; i++) {
+        for (uint256 i = 0; i < attendees.length; i++) {
             address attendee = attendees[i];
             uint256 tierId = tierIds[i];
 
@@ -278,7 +279,8 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
             bool poapAwarded = false;
             if (checkIn.poapContract != address(0)) {
                 if (!poapContract.claimed(eventId, attendee)) {
-                    poapContract.award(eventId, attendee);
+                    bytes32 metadataHash = keccak256(abi.encodePacked(eventId, attendee, block.timestamp));
+                    poapContract.awardPOAP(eventId, attendee, metadataHash);
                     poapAwarded = true;
                 }
             }
@@ -334,7 +336,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
 
         CheckInRecord[] memory history = checkInHistory[eventId][attendee];
         if (history.length > 0) {
-            CheckInRecord memory record = history[history.length -1];
+            CheckInRecord memory record = history[history.length - 1];
             checkInTime = record.timestamp;
             poapAwarded = record.poapAwarded;
         }
