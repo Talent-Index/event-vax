@@ -12,10 +12,11 @@ interface ITicketNFT {
         string calldata name,
         string calldata baseURI
     ) external;
+    function organizer() external view returns (address);
 }
 
 /**
- * @title EvenFactory
+ * @title EventFactory
  * @notice Central factory for creating event-specific ticket contracts
  * @dev Uses EIP-1167 minimal proxies for gas-efficient deployment
  */
@@ -38,7 +39,7 @@ contract EventFactory is AccessControl, Pausable {
     event EventCreated(
         uint256 indexed eventId,
         address indexed organizer,
-        address ticketContact,
+        address ticketContract,
         uint256 eventDate
     );
 
@@ -67,7 +68,7 @@ contract EventFactory is AccessControl, Pausable {
     /**
     * @notice Creates a new event with dedicated ticket contract
     * @param eventDate Unix timestamp of event start
-    * @param eventName of the Name of the event 
+    * @param eventName Name of the event 
     * @param baseURI IPFS base URI for metadata
     * @return eventId Unique identifier for the event
     */

@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
-* @title POAP ((Proof of Attendance Protocol) 
-* @notice ERC721 NFT for event attendees)
+* @title POAP (Proof of Attendance Protocol) 
+* @notice ERC721 NFT for event attendees
  */
 contract POAP is ERC721, AccessControl {
     bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER");
@@ -115,7 +115,7 @@ contract POAP is ERC721, AccessControl {
 
 /**
  * @title EventBadge
- * @notice ERC721 NFT for evet Organizers (host credentials)
+ * @notice ERC721 NFT for event Organizers (host credentials)
 */
 contract EventBadge is ERC721, AccessControl {
     bytes32 public constant BADGE_ISSUER_ROLE = keccak256("BADGE_ISSUER");

@@ -10,7 +10,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  */
 contract EventManager is AccessControl, Pausable {
     bytes32 public constant EVENT_ADMIN = keccak256("EVENT_ADMIN");
-    bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER");
 
     enum EventState {
         Draft, // Initial state
@@ -52,7 +51,7 @@ contract EventManager is AccessControl, Pausable {
 
     event EventStateChanged(
         uint256 indexed eventId,
-        EventState previouseState,
+        EventState previousState,
         EventState newState
     );
 
@@ -132,11 +131,11 @@ contract EventManager is AccessControl, Pausable {
         }
         if (ev.state != EventState.Active) revert InvalidTransition();
 
-        EventState previouseState = ev.state;
+        EventState previousState = ev.state;
         ev.state = EventState.Ended;
         stateTransitions[eventId][EventState.Ended] = block.timestamp;
 
-        emit EventStateChanged(eventId, previouseState, EventState.Ended);
+        emit EventStateChanged(eventId, previousState, EventState.Ended);
     } 
     
     /**
@@ -151,11 +150,11 @@ contract EventManager is AccessControl, Pausable {
         }
         if (ev.state == EventState.Ended) revert InvalidTransition();
 
-        EventState previouseState = ev.state;
+        EventState previousState = ev.state;
         ev.state = EventState.Cancelled;
         stateTransitions[eventId][EventState.Cancelled] = block.timestamp;
 
-        emit EventStateChanged(eventId, previouseState, EventState.Cancelled);
+        emit EventStateChanged(eventId, previousState, EventState.Cancelled);
     }
 
     /**

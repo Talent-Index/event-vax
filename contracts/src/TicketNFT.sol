@@ -54,7 +54,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
 
     bool public initialized;
 
-    event TicketTierCreated(uint256 indexed tierId, uint256 maxSupply, uint256 price0);
+    event TicketTierCreated(uint256 indexed tierId, uint256 maxSupply, uint256 price);
     event TicketPurchased(address indexed buyer, uint256 indexed tierId, uint256 amount, address token);
     event TicketCheckedIn(address indexed user, uint256 tierId);
     event EventStateChanged(EventStatus oldState, EventStatus newState);
@@ -118,7 +118,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
 
     /**
     * @notice Create a new ticket tier
-    * @param tierId Unique identifier for tier (0=Regular, 1=VIP, 2=WIP)
+    * @param tierId Unique identifier for tier (0=Regular, 1=VIP, 2=VVIP)
     * @param maxSupply Maximum tickets for this tier
     * @param price Price per ticket (in wei or token units)
      */
