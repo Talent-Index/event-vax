@@ -69,8 +69,12 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
     error RefundNotAvailable();
 
     modifier onlyOrganizer() {
-        require(hasRole(ORGANIZER_ROLE, msg.sender), "Not organizer");
+        _checkOrganizer();
         _;
+    }
+
+    function _checkOrganizer() private view {
+        require(hasRole(ORGANIZER_ROLE, msg.sender), "Not organizer");
     }
 
     constructor() ERC1155("") {}
