@@ -234,10 +234,11 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
 
         // Return excess payment
         if (payment > totalCost && token == address(0)) {
-                    payable(msg.sender).transfer(payment - totalCost);
-            }
-            emit TicketPurchased(msg.sender, tierId, amount, token);
+            (bool success,) = payable(msg.sender).call{value: payment - totalCost}("");
+            require(success, "Refund failed");
         }
+        emit TicketPurchased(msg.sender, tierId, amount, token);
+    }
     
 
         /**
@@ -294,7 +295,8 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
          */
          function withdraw() external onlyOrganizer nonReentrant {
             uint256 balance = address(this).balance;
-            payable(organizer).transfer(balance);
+            (bool success,) = payable(organizer).call{value: balance}("");
+            require(success, "Withdraw failed");
          }
 
          /** 

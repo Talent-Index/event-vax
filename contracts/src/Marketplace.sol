@@ -167,12 +167,15 @@ contract Marketplace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
         uint256 sellerProceeds = listing.price - platformFee - royaltyFee;
 
         // Transfer funds
-        payable(treasury).transfer(platformFee);
+        (bool success1,) = payable(treasury).call{value: platformFee}("");
+        require(success1, "Treasury transfer failed");
 
         // Transfer royalty to original organizer
         address organizer = ITicketNFT(listing.ticketContract).organizer();
-        payable(organizer).transfer(royaltyFee);
-        payable(listing.seller).transfer(sellerProceeds);
+        (bool success2,) = payable(organizer).call{value: royaltyFee}("");
+        require(success2, "Royalty transfer failed");
+        (bool success3,) = payable(listing.seller).call{value: sellerProceeds}("");
+        require(success3, "Seller transfer failed");
 
         // Transfer ticket to buyer
         IERC1155(listing.ticketContract).safeTransferFrom(
@@ -188,7 +191,8 @@ contract Marketplace is ERC1155Holder, ReentrancyGuard, Pausable, AccessControl 
 
         // Refund excess
         if (msg.value > listing.price) {
-            payable(msg.sender).transfer(msg.value - listing.price);
+            (bool success,) = payable(msg.sender).call{value: msg.value - listing.price}("");
+            require(success, "Refund failed");
         }
      }
 
