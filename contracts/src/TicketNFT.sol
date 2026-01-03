@@ -176,7 +176,7 @@ contract TicketNFT is ERC1155, AccessControl, Pausable, ReentrancyGuard {
     /**
      * @notice Activate ticket sales
      */
-     function goLive() external onlyOrganizer {
+     function goLive() external view onlyOrganizer {
         require(address(eventManager) == address(0) || !eventManager.isEventCancelled(eventId), "Event cancelled");
      }
 
