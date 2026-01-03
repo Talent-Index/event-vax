@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+
 interface ITicketNFT {
     function initialize(
         address organizer,
@@ -13,6 +14,16 @@ interface ITicketNFT {
         string calldata baseURI
     ) external;
     function organizer() external view returns (address);
+}
+
+interface IEventManager {
+    function registerEvent(
+        uint256 eventId,
+        address organizer,
+        address ticketContract,
+        uint256 startTime,
+        uint256 endTime
+    ) external;
 }
 
 /**
@@ -26,6 +37,7 @@ contract EventFactory is AccessControl, Pausable {
 
     address public immutable ticketImplementation;
     address public treasury;
+    IEventManager public eventManager;
 
     uint256 public nextEventId;
     uint256 public platformFeeBps = 250; // 2.5%
@@ -49,17 +61,20 @@ contract EventFactory is AccessControl, Pausable {
     error InvalidImplementation();
     error InvalidTreasury();
     error EventDateInPast();
+    error InvalidEventDuration();
     error FeeTooHigh();
 
     constructor(
         address _ticketImplementation,
-        address _treasury
+        address _treasury,
+        address _eventManager
     ) {
         if (_ticketImplementation == address(0)) revert InvalidImplementation();
         if (_treasury == address(0)) revert InvalidTreasury();
 
         ticketImplementation = _ticketImplementation;
         treasury = _treasury;
+        eventManager = IEventManager(_eventManager);
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(PLATFORM_ADMIN, msg.sender);
@@ -68,16 +83,19 @@ contract EventFactory is AccessControl, Pausable {
     /**
     * @notice Creates a new event with dedicated ticket contract
     * @param eventDate Unix timestamp of event start
+    * @param eventEndDate Unix timestamp of event end
     * @param eventName Name of the event 
     * @param baseURI IPFS base URI for metadata
     * @return eventId Unique identifier for the event
     */
     function createEvent(
         uint256 eventDate,
+        uint256 eventEndDate,
         string calldata eventName,
         string calldata baseURI
     ) external whenNotPaused returns (uint256 eventId) {
         if (eventDate <= block.timestamp) revert EventDateInPast();
+        if (eventEndDate <= eventDate) revert InvalidEventDuration();
 
         eventId = ++nextEventId;
 
@@ -96,6 +114,15 @@ contract EventFactory is AccessControl, Pausable {
         eventTicket[eventId] = clone;
         organizerEventCount[msg.sender]++;
 
+        // Register event with EventManager
+        eventManager.registerEvent(
+            eventId,
+            msg.sender,
+            clone,
+            eventDate,
+            eventEndDate
+        );
+
         emit EventCreated(eventId, msg.sender, clone, eventDate);
     }
 
@@ -104,12 +131,13 @@ contract EventFactory is AccessControl, Pausable {
     */
     function createEventBatch(
         uint256[] calldata eventDates,
+        uint256[] calldata eventEndDates,
         string[] calldata eventNames,
         string[] calldata baseURIs
     ) external whenNotPaused returns (uint256[] memory eventIds) {
         uint256 length = eventDates.length;
         require(
-            length == eventNames.length && length == baseURIs.length,
+            length == eventEndDates.length && length == eventNames.length && length == baseURIs.length,
             "Call data Array length mismatch"
         );
 
@@ -118,6 +146,7 @@ contract EventFactory is AccessControl, Pausable {
         for (uint256 i = 0; i < length; i++) {
             eventIds[i] = this.createEvent(
                 eventDates[i],
+                eventEndDates[i],
                 eventNames[i],
                 baseURIs[i]
             );

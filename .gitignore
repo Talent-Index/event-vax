@@ -26,3 +26,7 @@ dist-ssr
 *.amazonq
 FEATURE_GUIDE.md
 IMPLEMENTATION_SUMMARY.md
+
+*lib/*
+
+contracts\lib\
