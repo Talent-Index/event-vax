@@ -6,6 +6,10 @@ import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+interface IEventManager {
+    function isEventCancelled(uint256 eventId) external view returns (bool);
+}
+
 interface ITicketNFT {
     function balanceOf(address account, uint256 id) external view returns (uint256);
     function checkIn(address user, uint256 typeId) external;
@@ -52,6 +56,8 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
 
     // eventId => EventCheckIn
     mapping(uint256 => EventCheckIn) public eventCheckIns;
+
+    IEventManager public eventManager;
 
     // eventId => attendee => CheckInRecord[]
     mapping(uint256 => mapping(address => CheckInRecord[])) public checkInHistory;
@@ -110,6 +116,10 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
         _grantRole(VERIFIER_ROLE, msg.sender);
     }
 
+    function setEventManager(address _eventManager) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        eventManager = IEventManager(_eventManager);
+    }
+
     /**
     * @notice Configure check-in for an event
     * @param eventId Event identifier
@@ -162,6 +172,7 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
 
         // Validity checks
         if (!checkIn.active) revert CheckInNotActive();
+        if (address(eventManager) != address(0) && eventManager.isEventCancelled(eventId)) revert CheckInNotActive();
         if (block.timestamp < checkIn.startTime) revert EventNotStarted();
         if (block.timestamp > checkIn.endTime) revert EventEnded();
         if (block.timestamp > deadline) revert DeadlineExpired();
@@ -418,5 +429,12 @@ contract QRVerificationSystem is AccessControl, EIP712, ReentrancyGuard {
         */
         function getCurrentNonce(address attendee) external view returns (uint256) {
             return nonces[attendee];
+        }
+
+        /**
+        * @notice Verify if user can comment/rate (has checked in)
+        */
+        function canParticipate(uint256 eventId, address user) external view returns (bool) {
+            return hasCheckedIn[eventId][user];
         }
 }

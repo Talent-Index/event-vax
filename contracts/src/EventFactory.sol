@@ -11,7 +11,9 @@ interface ITicketNFT {
         uint256 eventId,
         uint256 eventDate,
         string calldata name,
-        string calldata baseURI
+        string calldata baseURI,
+        address marketplace,
+        address eventManager
     ) external;
     function organizer() external view returns (address);
 }
@@ -37,6 +39,7 @@ contract EventFactory is AccessControl, Pausable {
 
     address public immutable ticketImplementation;
     address public treasury;
+    address public marketplace;
     IEventManager public eventManager;
 
     uint256 public nextEventId;
@@ -67,7 +70,8 @@ contract EventFactory is AccessControl, Pausable {
     constructor(
         address _ticketImplementation,
         address _treasury,
-        address _eventManager
+        address _eventManager,
+        address _marketplace
     ) {
         if (_ticketImplementation == address(0)) revert InvalidImplementation();
         if (_treasury == address(0)) revert InvalidTreasury();
@@ -75,6 +79,7 @@ contract EventFactory is AccessControl, Pausable {
         ticketImplementation = _ticketImplementation;
         treasury = _treasury;
         eventManager = IEventManager(_eventManager);
+        marketplace = _marketplace;
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(PLATFORM_ADMIN, msg.sender);
@@ -108,7 +113,9 @@ contract EventFactory is AccessControl, Pausable {
             eventId,
             eventDate,
             eventName,
-            baseURI
+            baseURI,
+            marketplace,
+            address(eventManager)
         );
 
         eventTicket[eventId] = clone;
