@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Script.sol";
-import "../src/TicketNFT.sol";
-import "../src/EventFactory.sol";
-import "../src/EventManager.sol";
-import "../src/Marketplace.sol";
-import "../src/QRVerificationSystem.sol";
-import "../src/PoapAndBadgeSystem.sol";
-import "../src/MetadataRegistry.sol";
+import {Script, console} from "forge-std/Script.sol";
+import {TicketNFT} from "../src/TicketNFT.sol";
+import {EventFactory} from "../src/EventFactory.sol";
+import {EventManager} from "../src/EventManager.sol";
+import {Marketplace} from "../src/Marketplace.sol";
+import {QRVerificationSystem} from "../src/QRVerificationSystem.sol";
+import {POAP, EventBadge} from "../src/PoapAndBadgeSystem.sol";
+import {MetadataRegistry} from "../src/MetadataRegistry.sol";
 
 contract DeployScript is Script {
     function run() external {
