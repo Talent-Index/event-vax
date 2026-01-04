@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Wallet, Ticket as TicketIcon, Calendar, MapPin, User, QrCode, Download, AlertCircle, Loader, Eye, DollarSign, MessageSquare } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
+import { CONTRACTS, NETWORK } from '../config/contracts';
 
 const AVALANCHE_MAINNET_PARAMS = {
   chainId: '0xA86A',
-  chainName: 'Avalanche Mainnet C-Chain',
+  chainName: NETWORK.NAME,
   nativeCurrency: {
     name: 'Avalanche',
     symbol: 'AVAX',
     decimals: 18
   },
-  rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
-  blockExplorerUrls: ['https://snowtrace.io/']
+  rpcUrls: [NETWORK.RPC_URL],
+  blockExplorerUrls: [NETWORK.EXPLORER]
 };
-
-// Replace with your actual contract address and ABI
-const CONTRACT_ADDRESS = "0x256ff3b9d3df415a05ba42beb5f186c28e103b2a";
 
 const Ticket = () => {
   const { walletAddress, isConnecting, connectWallet, isConnected } = useWallet();

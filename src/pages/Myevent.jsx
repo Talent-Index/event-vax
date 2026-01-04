@@ -2,9 +2,14 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Ticket, Sparkles, Wallet, Plus, DollarSign, Users, Clock, Star, Zap } from "lucide-react";
+import { ethers } from 'ethers';
+import { useWallet } from '../contexts/WalletContext';
+import { EventFactoryABI } from '../abi';
+import { CONTRACTS } from '../config/contracts';
 
 const QuantumEventCreator = () => {
   const navigate = useNavigate();
+  const { walletAddress, isConnected, connectWallet } = useWallet();
   const [isLoading, setIsLoading] = useState(true);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [formData, setFormData] = useState({
@@ -103,7 +108,34 @@ const QuantumEventCreator = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!isConnected) {
+      alert('Please connect your wallet first!');
+      await connectWallet();
+      return;
+    }
+
     try {
+      // Convert event date to Unix timestamp
+      const eventDate = Math.floor(new Date(formData.eventDate).getTime() / 1000);
+      const eventEndDate = eventDate + (24 * 60 * 60); // Add 24 hours
+
+      // Connect to blockchain
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACTS.EVENT_FACTORY, EventFactoryABI.abi, signer);
+
+      // Create event on blockchain
+      const tx = await contract.createEvent(
+        eventDate,
+        eventEndDate,
+        formData.eventName,
+        `ipfs://eventverse/${formData.eventName.replace(/\s+/g, '-').toLowerCase()}`
+      );
+
+      console.log('Blockchain transaction submitted:', tx.hash);
+      await tx.wait();
+      console.log('Event created on blockchain!');
+
       // Convert image to base64 if present
       let flyerImageBase64 = null;
       if (eventFlyer) {
@@ -125,7 +157,8 @@ const QuantumEventCreator = () => {
         vvipPrice: formData.vvipPrice,
         description: formData.description,
         flyerImage: flyerImageBase64,
-        creatorAddress: null // Will be set when wallet is connected
+        creatorAddress: walletAddress,
+        blockchainTxHash: tx.hash
       };
 
       // Send to backend API
