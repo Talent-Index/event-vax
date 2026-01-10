@@ -30,3 +30,4 @@ IMPLEMENTATION_SUMMARY.md
 *lib/*
 
 contracts\lib\
+.env

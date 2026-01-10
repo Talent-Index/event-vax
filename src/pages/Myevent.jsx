@@ -7,6 +7,80 @@ import { useWallet } from '../contexts/WalletContext';
 import { EventFactoryABI } from '../abi';
 import { CONTRACTS } from '../config/contracts';
 
+// PriceCard component - moved outside to prevent re-creation on every render
+const PriceCard = ({ tier, icon: Icon, price, color, features, handleInputChange, focusedField, setFocusedField }) => (
+  <div className={`relative overflow-hidden rounded-xl p-6 transition-all duration-500 hover:scale-105
+                  bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-lg
+                  border-2 ${color} hover:shadow-lg hover:shadow-${color}/20`}>
+    <div className={`absolute inset-0 bg-gradient-to-r ${color.replace('border', 'from')}/10 to-transparent
+                    opacity-0 hover:opacity-100 transition-opacity duration-500`} />
+
+    <div className="relative z-10">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-2">
+          <Icon className={`w-6 h-6 ${color.replace('border', 'text')}`} />
+          <h3 className="text-xl font-bold text-white">{tier}</h3>
+        </div>
+        {tier === "VVIP" && (
+          <Star className="w-5 h-5 text-yellow-400 animate-pulse" />
+        )}
+      </div>
+
+      <input
+        type="number"
+        name={`${tier.toLowerCase()}Price`}
+        value={price}
+        onChange={handleInputChange}
+        onFocus={() => setFocusedField(`${tier.toLowerCase()}Price`)}
+        onBlur={() => setFocusedField(null)}
+        placeholder="0.00"
+        className={`w-full bg-gray-800/50 border ${focusedField === `${tier.toLowerCase()}Price` ? color : 'border-gray-700'
+          } rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-all duration-300`}
+      />
+
+      <ul className="mt-4 space-y-2 text-sm text-gray-400">
+        {features.map((feature, idx) => (
+          <li key={idx} className="flex items-start">
+            <Zap className={`w-4 h-4 mr-2 mt-0.5 ${color.replace('border', 'text')}`} />
+            {feature}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+);
+
+PriceCard.propTypes = {
+  tier: PropTypes.string.isRequired,
+  icon: PropTypes.elementType.isRequired,
+  price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  color: PropTypes.string,
+  features: PropTypes.arrayOf(PropTypes.string),
+  handleInputChange: PropTypes.func.isRequired,
+  focusedField: PropTypes.string,
+  setFocusedField: PropTypes.func.isRequired
+};
+
+// FloatingParticle component - moved outside to prevent re-creation on every render
+const FloatingParticle = ({ delay = 0 }) => (
+  <div
+    className="absolute rounded-full animate-float"
+    style={{
+      backgroundColor: Math.random() > 0.5 ? "#9333EA" : "#3B82F6",
+      width: `${Math.random() * 3 + 2}px`,
+      height: `${Math.random() * 3 + 2}px`,
+      animation: `float 8s infinite ${delay}s ease-in-out`,
+      opacity: 0.6,
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+    }}
+  />
+);
+
+FloatingParticle.propTypes = {
+  delay: PropTypes.number
+};
+
 const QuantumEventCreator = () => {
   const navigate = useNavigate();
   const { walletAddress, isConnected, connectWallet } = useWallet();
@@ -202,70 +276,6 @@ const QuantumEventCreator = () => {
       console.error('Error creating event:', error);
       alert('❌ Failed to create event. Please check console for details.');
     }
-  };
-
-  const FloatingParticle = ({ delay = 0 }) => (
-    <div
-      className="absolute rounded-full animate-float"
-      style={{
-        backgroundColor: Math.random() > 0.5 ? "#9333EA" : "#3B82F6",
-        width: `${Math.random() * 3 + 2}px`,
-        height: `${Math.random() * 3 + 2}px`,
-        animation: `float 8s infinite ${delay}s ease-in-out`,
-        opacity: 0.6,
-        top: `${Math.random() * 100}%`,
-        left: `${Math.random() * 100}%`,
-      }}
-    />
-  );
-  const PriceCard = ({ tier, icon: Icon, price, color, features }) => (
-    <div className={`relative overflow-hidden rounded-xl p-6 transition-all duration-500 hover:scale-105
-                    bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-lg
-                    border-2 ${color} hover:shadow-lg hover:shadow-${color}/20`}>
-      <div className={`absolute inset-0 bg-gradient-to-r ${color.replace('border', 'from')}/10 to-transparent
-                      opacity-0 hover:opacity-100 transition-opacity duration-500`} />
-
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <Icon className={`w-6 h-6 ${color.replace('border', 'text')}`} />
-            <h3 className="text-xl font-bold text-white">{tier}</h3>
-          </div>
-          {tier === "VVIP" && (
-            <Star className="w-5 h-5 text-yellow-400 animate-pulse" />
-          )}
-        </div>
-
-        <input
-          type="number"
-          name={`${tier.toLowerCase()}Price`}
-          value={price}
-          onChange={handleInputChange}
-          onFocus={() => setFocusedField(`${tier}Price`)}
-          onBlur={() => setFocusedField(null)}
-          placeholder="0.00"
-          className={`w-full bg-gray-800/50 border ${focusedField === `${tier}Price` ? color : 'border-gray-700'
-            } rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-all duration-300`}
-        />
-
-        <ul className="mt-4 space-y-2 text-sm text-gray-400">
-          {features.map((feature, idx) => (
-            <li key={idx} className="flex items-start">
-              <Zap className={`w-4 h-4 mr-2 mt-0.5 ${color.replace('border', 'text')}`} />
-              {feature}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-
-  PriceCard.propTypes = {
-    tier: PropTypes.string.isRequired,
-    icon: PropTypes.elementType.isRequired,
-    price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    color: PropTypes.string,
-    features: PropTypes.arrayOf(PropTypes.string)
   };
 
   return (
@@ -541,6 +551,9 @@ const QuantumEventCreator = () => {
                 price={formData.regularPrice}
                 color="border-green-500"
                 features={["Standard entry", "Event access", "Digital ticket"]}
+                handleInputChange={handleInputChange}
+                focusedField={focusedField}
+                setFocusedField={setFocusedField}
               />
               <PriceCard
                 tier="VIP"
@@ -548,6 +561,9 @@ const QuantumEventCreator = () => {
                 price={formData.vipPrice}
                 color="border-blue-500"
                 features={["Priority entry", "VIP lounge access", "Premium seating", "Meet & greet"]}
+                handleInputChange={handleInputChange}
+                focusedField={focusedField}
+                setFocusedField={setFocusedField}
               />
               <PriceCard
                 tier="VVIP"
@@ -555,6 +571,9 @@ const QuantumEventCreator = () => {
                 price={formData.vvipPrice}
                 color="border-yellow-500"
                 features={["Exclusive access", "Backstage pass", "Private area", "Gift package", "Photo opportunity"]}
+                handleInputChange={handleInputChange}
+                focusedField={focusedField}
+                setFocusedField={setFocusedField}
               />
             </div>
           </div>
