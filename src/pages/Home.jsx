@@ -6,7 +6,7 @@ import Testimonials from './Testimonials';
 import Discover from './Discover';
 // Footer is now handled elsewhere in the application
 import Teams from './Teams';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 
 // Avalanche Network Configuration
@@ -84,26 +84,12 @@ const AnimatedCard = ({ children, delay, onClick, isSelected }) => {
 };
 
 const UltimateEventPlatform = () => {
+  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [activeStat, setActiveStat] = useState(null);
   const { walletAddress, isConnecting, connectWallet, isConnected } = useWallet();
-  const [walletInitialized, setWalletInitialized] = useState(false);
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('Home component wallet state:', { isConnected, walletAddress, isConnecting });
-  }, [isConnected, walletAddress, isConnecting]);
-  
-  // Wait for wallet context to initialize
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setWalletInitialized(true);
-    }, 1000); // Give wallet context time to check existing connections
-    
-    return () => clearTimeout(timer);
-  }, []);
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
   const [activeEventFilter, setActiveEventFilter] = useState('all');
   const [events, setEvents] = useState([]);
@@ -174,23 +160,16 @@ const UltimateEventPlatform = () => {
   };
 
   const handleProtectedNavigation = (path) => {
-    console.log('Navigation check:', { isConnected, walletAddress, walletInitialized });
-    
-    // If wallet context hasn't initialized yet, wait
-    if (!walletInitialized) {
-      console.log('Wallet not initialized yet, waiting...');
-      setTimeout(() => handleProtectedNavigation(path), 500);
-      return;
-    }
-    
+    console.log('Navigation check:', { isConnected, walletAddress });
+
     if (!isConnected || !walletAddress) {
       console.log('Wallet not connected, showing sign in prompt');
       setShowSignInPrompt(true);
       return;
     }
-    
-    // console.log('Wallet connected, navigating to:', path);
-    window.location.href = path;
+
+    console.log('Wallet connected, navigating to:', path);
+    navigate(path);
   };
 
   return (
