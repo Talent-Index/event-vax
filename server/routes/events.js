@@ -3,7 +3,7 @@ import { insertEvent, getAllEvents, getEventById, updateEvent, deleteEvent } fro
 
 const router = express.Router();
 
-// Create new event
+// Create new event (NO IPFS - database only)
 router.post('/', async (req, res) => {
     try {
         const eventData = req.body;
@@ -16,16 +16,21 @@ router.post('/', async (req, res) => {
             });
         }
 
+        console.log('💾 Saving event to database (no IPFS for event posters)...');
+
+        // Save directly to database with base64 image
         const eventId = insertEvent(eventData);
+
+        const savedEvent = getEventById(eventId);
 
         res.status(201).json({
             success: true,
             message: 'Event created successfully',
             eventId: eventId,
-            data: getEventById(eventId)
+            data: savedEvent
         });
     } catch (error) {
-        console.error('Error creating event:', error);
+        console.error('❌ Error creating event:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to create event',
