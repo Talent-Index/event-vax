@@ -25,7 +25,12 @@ const createEventsTable = () => {
       vvip_price TEXT,
       description TEXT,
       flyer_image TEXT,
+      ipfs_image_hash TEXT,
+      ipfs_metadata_hash TEXT,
+      content_hash TEXT,
       creator_address TEXT,
+      blockchain_tx_hash TEXT,
+      blockchain_event_id INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -35,10 +40,32 @@ const createEventsTable = () => {
     console.log('✅ Events table created/verified');
 };
 
+// Create tickets table
+const createTicketsTable = () => {
+    const sql = `
+    CREATE TABLE IF NOT EXISTS tickets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_id INTEGER NOT NULL,
+      wallet_address TEXT NOT NULL,
+      tier_id INTEGER NOT NULL,
+      quantity INTEGER NOT NULL,
+      qr_code TEXT,
+      transaction_hash TEXT,
+      verified INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (event_id) REFERENCES events(id)
+    )
+  `;
+
+    db.exec(sql);
+    console.log('✅ Tickets table created/verified');
+};
+
 // Initialize database
 export const initDatabase = () => {
     try {
         createEventsTable();
+        createTicketsTable();
         console.log('✅ Database initialized successfully');
     } catch (error) {
         console.error('❌ Database initialization error:', error);
@@ -51,8 +78,10 @@ export const insertEvent = (eventData) => {
     const sql = `
     INSERT INTO events (
       event_name, event_date, venue, regular_price, 
-      vip_price, vvip_price, description, flyer_image, creator_address
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      vip_price, vvip_price, description, flyer_image, 
+      ipfs_image_hash, ipfs_metadata_hash, content_hash,
+      creator_address, blockchain_tx_hash, blockchain_event_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
     const stmt = db.prepare(sql);
@@ -65,7 +94,12 @@ export const insertEvent = (eventData) => {
         eventData.vvipPrice || null,
         eventData.description || null,
         eventData.flyerImage || null,
-        eventData.creatorAddress || null
+        eventData.ipfsImageHash || null,
+        eventData.ipfsMetadataHash || null,
+        eventData.contentHash || null,
+        eventData.creatorAddress || null,
+        eventData.blockchainTxHash || null,
+        eventData.blockchainEventId || null
     );
 
     return result.lastInsertRowid;
