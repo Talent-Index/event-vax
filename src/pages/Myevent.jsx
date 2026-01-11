@@ -273,8 +273,16 @@ const QuantumEventCreator = () => {
         console.error('Error:', result);
       }
     } catch (error) {
+      // Check if user rejected the transaction
+      if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+        console.log('Transaction cancelled by user');
+        elert('Transaction cancelled. No changes were made.');
+        return;
+      }
+
+      // Handling actual errors
       console.error('Error creating event:', error);
-      alert('❌ Failed to create event. Please check console for details.');
+      alert('❌ Failed to create event. Please try again.');
     }
   };
 
