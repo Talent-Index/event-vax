@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Ticket, Sparkles, Wallet, Plus, DollarSign, Users, Clock, Star, Zap } from "lucide-react";
 import { ethers } from 'ethers';
 import { useWallet } from '../contexts/WalletContext';
-import { EventFactoryABI } from '../abi';
+import { EventFactoryABI, TicketNFTABI } from '../abi';
 import { CONTRACTS } from '../config/contracts';
 
 // PriceCard component - moved outside to prevent re-creation on every render
@@ -207,8 +207,47 @@ const QuantumEventCreator = () => {
       );
 
       console.log('Blockchain transaction submitted:', tx.hash);
-      await tx.wait();
+      const receipt = await tx.wait();
       console.log('Event created on blockchain!');
+
+      // Extract blockchain event ID from EventCreated event
+      let blockchainEventId = null;
+      for (const log of receipt.logs) {
+        try {
+          const parsed = contract.interface.parseLog({
+            topics: log.topics,
+            data: log.data
+          });
+          if (parsed.name === 'EventCreated') {
+            blockchainEventId = parsed.args.eventId.toString();
+            console.log('Blockchain Event ID:', blockchainEventId);
+            break;
+          }
+        } catch (e) {
+          continue;
+        }
+      }
+
+      if (!blockchainEventId) {
+        throw new Error('Failed to extract event ID from blockchain transaction');
+      }
+
+      // Create ticket tiers automatically
+      console.log('Creating ticket tiers...');
+      const ticketAddress = await contract.eventTicket(blockchainEventId);
+      const ticketContract = new ethers.Contract(ticketAddress, TicketNFTABI.abi, signer);
+
+      const tierTx = await ticketContract.createTiersBatch(
+        [0, 1, 2],
+        [100, 50, 20],
+        [
+          ethers.parseEther(formData.regularPrice || "0.01"),
+          ethers.parseEther(formData.vipPrice || "0.05"),
+          ethers.parseEther(formData.vvipPrice || "0.1")
+        ]
+      );
+      await tierTx.wait();
+      console.log('✅ Ticket tiers created!');
 
       // Convert image to base64 if present
       let flyerImageBase64 = null;
@@ -232,7 +271,8 @@ const QuantumEventCreator = () => {
         description: formData.description,
         flyerImage: flyerImageBase64,
         creatorAddress: walletAddress,
-        blockchainTxHash: tx.hash
+        blockchainTxHash: tx.hash,
+        blockchainEventId: blockchainEventId
       };
 
       // Send to backend API
@@ -269,14 +309,14 @@ const QuantumEventCreator = () => {
           navigate('/');
         }, 1500);
       } else {
-        alert(`❌ Failed to create event: ${result.error}`);
+        alert(`❌ Failed to create event: ${result.error || 'Unknown error'}`);
         console.error('Error:', result);
       }
     } catch (error) {
       // Check if user rejected the transaction
       if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
         console.log('Transaction cancelled by user');
-        elert('Transaction cancelled. No changes were made.');
+        alert('Transaction cancelled. No changes were made.');
         return;
       }
 
