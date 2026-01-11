@@ -20,6 +20,9 @@ import {
 } from 'lucide-react';
 import CommentRatingSection from '../components/CommentRatingSection';
 import { useWallet } from '../contexts/WalletContext';
+import { ethers } from 'ethers';
+import { CONTRACTS } from '../config/contracts';
+import { EventFactoryABI, TicketNFTABI } from '../abi';
 
 const QuantumMintNFT = () => {
   const [searchParams] = useSearchParams();
@@ -200,114 +203,117 @@ const QuantumMintNFT = () => {
   };
 
   const handleMintNFT = async () => {
-    if (!walletAddress) {
-      setError('Please connect your wallet first');
-      return;
-    }
+    if (!walletAddress) return;
 
-    setError(null);
     setIsLoading(true);
-    setMintingStatus('Initializing quantum minting process...');
-    setCurrentStep(4);
+    setMintingStatus('Connecting to wallet...');
 
     try {
-      if (window.ethereum) {
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-        if (chainId !== '0xA86A') {
-          setMintingStatus('Please switch to Avalanche network...');
-          try {
-            await window.ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: '0xA86A' }],
-            });
-          } catch (switchError) {
-            if (switchError.code === 4902) {
-              await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                  chainId: '0xA86A',
-                  chainName: 'Avalanche Mainnet C-Chain',
-                  nativeCurrency: {
-                    name: 'Avalanche',
-                    symbol: 'AVAX',
-                    decimals: 18
-                  },
-                  rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
-                  blockExplorerUrls: ['https://snowtrace.io/']
-                }]
-              });
-            }
-          }
-        }
+      // Ensure fresh connection
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      // Use stored blockchain_event_id
+      const blockchainEventId = eventData.rawData.blockchain_event_id;
+      
+      if (!blockchainEventId) {
+        throw new Error('This event was not properly created on the blockchain. Please contact the event organizer.');
       }
 
-      setMintingStatus(`Please confirm the transaction in your wallet... (Minting ${ticketQuantity} ticket${ticketQuantity > 1 ? 's' : ''})`);
+      setMintingStatus('Loading event contract...');
 
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      const currentTicket = getCurrentTicketDetails();
-      const existingTickets = localStorage.getItem(`mintedTickets_${walletAddress}`);
-      const tickets = existingTickets ? JSON.parse(existingTickets) : [];
-
-      // Mint multiple tickets based on quantity
-      const mintedTickets = [];
-      for (let i = 0; i < ticketQuantity; i++) {
-        // Generate unique token URI for each ticket
-        const mockIPFSHash = `Qm${Math.random().toString(36).substring(2, 15)}`;
-        const ticketTokenURI = `ipfs://${mockIPFSHash}`;
-
-        const mintedTicket = {
-          eventId: eventId,
-          eventName: currentTicket.name,
-          eventDate: currentTicket.attributes.find(attr => attr.trait_type === "Date")?.value || eventData.date,
-          eventTime: "2:00 PM - 10:00 PM",
-          venue: currentTicket.attributes.find(attr => attr.trait_type === "Venue")?.value || eventData.venue,
-          address: "123 Convention Ave, New York, NY 10001",
-          ticketType: currentTicket.attributes.find(attr => attr.trait_type === "Ticket Type")?.value || "Regular",
-          seatNumber: `${selectedTicketType.toUpperCase()}-${Math.floor(Math.random() * 1000)}`,
-          price: currentTicket.attributes.find(attr => attr.trait_type === "Price")?.value || "0 AVAX",
-          qrCode: `QR${Math.random().toString(36).substring(2, 15)}`,
-          status: "Valid",
-          description: currentTicket.description,
-          mintDate: new Date().toISOString(),
-          tokenURI: ticketTokenURI,
-          tokenId: `TICKET-${Date.now()}-${i + 1}`,
-          quantity: ticketQuantity,
-          ticketNumber: i + 1
-        };
-
-        mintedTickets.push(mintedTicket);
-        tickets.push(mintedTicket);
-
-        // Update status for each ticket
-        if (ticketQuantity > 1) {
-          setMintingStatus(`Minting ticket ${i + 1} of ${ticketQuantity}...`);
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
+      // Get ticket contract address
+      const factoryContract = new ethers.Contract(
+        CONTRACTS.EVENT_FACTORY, 
+        EventFactoryABI.abi, 
+        provider
+      );
+      
+      const ticketContractAddress = await factoryContract.eventTicket(blockchainEventId);
+      
+      if (ticketContractAddress === ethers.ZeroAddress) {
+        throw new Error('Event ticket contract not found on blockchain.');
       }
 
-      localStorage.setItem(`mintedTickets_${walletAddress}`, JSON.stringify(tickets));
+      setMintingStatus('Preparing purchase...');
 
-      setMintingStatus(`🎉 ${ticketQuantity} NFT Ticket${ticketQuantity > 1 ? 's' : ''} Minted Successfully!`);
-      setMintedTicketData({
-        ...mintedTickets[0],
-        totalQuantity: ticketQuantity,
-        allTickets: mintedTickets
+      const ticketContract = new ethers.Contract(
+        ticketContractAddress, 
+        TicketNFTABI.abi, 
+        signer
+      );
+
+      // Map ticket types to tier IDs
+      const tierMap = { regular: 0, vip: 1, vvip: 2 };
+      const tierId = tierMap[selectedTicketType];
+
+      // Calculate total cost
+      const price = eventData.ticketPrices[selectedTicketType];
+      const totalCost = ethers.parseEther((parseFloat(price) * ticketQuantity).toString());
+
+      setMintingStatus(`Purchasing ${ticketQuantity} ticket(s)...`);
+
+      // Purchase tickets on blockchain
+      const tx = await ticketContract.purchaseTicket(tierId, ticketQuantity, {
+        value: totalCost
       });
 
-      setTimeout(() => {
+      setMintingStatus('Waiting for blockchain confirmation...');
+      const receipt = await tx.wait();
+
+      setMintingStatus('Saving ticket to database...');
+
+      // Save to database with blockchain proof
+      const ticketData = {
+        eventId,
+        walletAddress,
+        ticketType: selectedTicketType,
+        quantity: ticketQuantity,
+        transactionHash: tx.hash,
+        blockNumber: receipt.blockNumber,
+        ticketContractAddress,
+        tierId,
+        blockchainEventId
+      };
+
+      const backendResponse = await fetch('http://localhost:8080/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ticketData)
+      });
+
+      const backendResult = await backendResponse.json();
+
+      if (!backendResponse.ok || !backendResult.success) {
+        console.warn('Backend save failed:', backendResult);
+        setMintingStatus('⚠️ Tickets purchased on blockchain but database save failed');
+        // Still show success since blockchain transaction succeeded
+        setTimeout(() => {
+          setMintingStatus(`🎉 ${ticketQuantity} Ticket(s) Purchased!`);
+          setShowSuccessModal(true);
+        }, 2000);
+      } else {
+        console.log('✅ Ticket saved to database:', backendResult);
+        setMintingStatus(`🎉 ${ticketQuantity} Ticket(s) Purchased!`);
         setShowSuccessModal(true);
-      }, 1000);
+      }
 
     } catch (error) {
-      console.error('Error minting NFT:', error);
-      setError(error.message || 'Error minting NFT. Please try again.');
+      if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+        setMintingStatus(null);
+        alert('Transaction cancelled');
+        return;
+      }
+      console.error('Minting error:', error);
+      setError(error.message || 'Failed to purchase tickets');
       setMintingStatus(null);
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   const handleViewTickets = () => {
     setShowSuccessModal(false);
     window.location.href = '/ticket';
