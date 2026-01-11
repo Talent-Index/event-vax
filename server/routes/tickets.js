@@ -1,0 +1,78 @@
+import express from 'express';
+import { ethers } from "ethers";
+import { TicketNFTABI } from "../../src/abi/index.js";
+import db from '../utils/database.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const router = express.Router();
+const AVALANCHE_RPC = process.env.AVALANCHE_RPC || 'https://api.avax-test.network/ext/bc/C/rpc';
+
+router.post('/', async (req, res) => {
+    try {
+        const { transactionHash, walletAddress, ticketContractAddress, eventId, tierId, quantity } = req.body;
+
+        console.log('📥 Saving ticket:', { eventId, walletAddress, quantity, transactionHash });
+
+        // Generate QR code with on-chain verifiable data
+        const qrData = {
+            contractAddress: ticketContractAddress,
+            tokenId: tierId,
+            owner: walletAddress,
+            eventId: eventId
+        };
+
+        // Save to database immediately (frontend already verified blockchain)
+        const result = db.prepare(`
+            INSERT INTO tickets (event_id, wallet_address, tier_id, quantity, qr_code, transaction_hash, verified)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            eventId,
+            walletAddress,
+            tierId,
+            quantity,
+            JSON.stringify(qrData),
+            transactionHash,
+            1
+        );
+
+        console.log('✅ Ticket saved with ID:', result.lastInsertRowid);
+        
+        // Send immediate response
+        res.json({ success: true, ticketId: result.lastInsertRowid });
+
+        // Background verification (doesn't block response)
+        setImmediate(async () => {
+            try {
+                console.log('🔍 Background verification started for:', transactionHash);
+                const provider = new ethers.JsonRpcProvider(AVALANCHE_RPC);
+                const receipt = await provider.getTransactionReceipt(transactionHash);
+
+                if (!receipt || receipt.status !== 1) {
+                    console.warn('⚠️ Transaction verification failed:', transactionHash);
+                    db.prepare('UPDATE tickets SET verified = 0 WHERE transaction_hash = ?').run(transactionHash);
+                    return;
+                }
+
+                const contract = new ethers.Contract(ticketContractAddress, TicketNFTABI.abi, provider);
+                const balance = await contract.balanceOf(walletAddress, tierId);
+
+                if (balance < quantity) {
+                    console.warn('⚠️ Ownership verification failed:', { walletAddress, tierId, balance, quantity });
+                    db.prepare('UPDATE tickets SET verified = 0 WHERE transaction_hash = ?').run(transactionHash);
+                } else {
+                    console.log('✅ Background verification passed:', transactionHash);
+                }
+            } catch (error) {
+                console.error('❌ Background verification error:', error.message);
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error saving ticket:', error);
+        res.status(500).json({ success: false, error: 'Failed to save ticket', details: error.message });
+    }
+});
+
+export default router;
