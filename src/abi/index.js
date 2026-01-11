@@ -1,11 +1,11 @@
-import EventFactoryABI from './EventFactory.json';
-import MarketplaceABI from './Marketplace.json';
-import EventManagerABI from './EventManager.json';
-import QRVerificationABI from './QRVerificationSystem.json';
-import TicketNFTABI from './TicketNFT.json';
-import POAPABI from './POAP.json';
-import EventBadgeABI from './EventBadge.json';
-import MetadataRegistryABI from './MetadataRegistry.json';
+import EventFactoryABI from './EventFactory.json' assert { type: 'json' };
+import MarketplaceABI from './Marketplace.json' assert { type: 'json' };
+import EventManagerABI from './EventManager.json' assert { type: 'json' };
+import QRVerificationABI from './QRVerificationSystem.json' assert { type: 'json' };
+import TicketNFTABI from './TicketNFT.json' assert { type: 'json' };
+import POAPABI from './POAP.json' assert { type: 'json' };
+import EventBadgeABI from './EventBadge.json' assert { type: 'json' };
+import MetadataRegistryABI from './MetadataRegistry.json' assert { type: 'json' };
 
 export {
   EventFactoryABI,
