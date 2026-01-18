@@ -43,75 +43,42 @@ const Ticket = () => {
     try {
       setIsLoading(true);
       
-      // Check if user has minted tickets (stored in localStorage)
-      const mintedTickets = localStorage.getItem(`mintedTickets_${walletAddress}`);
-      const parsedMintedTickets = mintedTickets ? JSON.parse(mintedTickets) : [];
+      // Fetch tickets from backend
+      const response = await fetch(`http://localhost:8080/api/tickets/wallet/${walletAddress}`);
+      const result = await response.json();
 
-      // Mock images for tickets
-      const mockImages = [
-        "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop",
-        "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=400&h=300&fit=crop",
-        "https://images.unsplash.com/photo-1571263346811-c0a0c72c8ccb?w=400&h=300&fit=crop",
-        "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=300&fit=crop"
-      ];
+      if (result.success && result.tickets.length > 0) {
+        const formattedTickets = result.tickets.map((ticket, index) => ({
+          tokenId: ticket.id.toString(),
+          eventId: ticket.event_id,
+          eventName: ticket.event_name,
+          eventDate: new Date(ticket.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+          eventTime: new Date(ticket.event_date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+          venue: ticket.venue,
+          address: ticket.venue,
+          ticketType: ['Regular', 'VIP', 'VVIP'][ticket.tier_id] || 'General',
+          seatNumber: `${['REG', 'VIP', 'VVIP'][ticket.tier_id]}-${ticket.id}`,
+          price: `${ticket.quantity} ticket(s)`,
+          qrCode: ticket.qr_code,
+          status: ticket.verified ? 'Valid' : 'Pending',
+          description: ticket.description || 'Event ticket',
+          image: ticket.flyer_image || `https://images.unsplash.com/photo-${1540575467063 + index}?w=400&h=300&fit=crop`,
+          mintDate: ticket.created_at,
+          owner: walletAddress,
+          quantity: ticket.quantity
+        }));
 
-      // Base tickets (always available for demo)
-      const demoTickets = [
-        {
-          tokenId: "1",
-          eventId: "event_1",
-          eventName: "EventVax Summit 2025",
-          eventDate: "March 15, 2025",
-          eventTime: "2:00 PM - 10:00 PM",
-          venue: "Convention Center, New York",
-          address: "123 Convention Ave, New York, NY 10001",
-          ticketType: "VIP Access",
-          seatNumber: "VIP-A12",
-          price: "0.08 AVAX",
-          qrCode: "QR123456789",
-          status: "Valid",
-          description: "Premium access to all VIP areas, networking sessions, and exclusive content.",
-          image: mockImages[0],
-          mintDate: "2024-12-15T10:30:00Z",
-          owner: walletAddress
-        },
-        {
-          tokenId: "2",
-          eventId: "event_2",
-          eventName: "Web3 Developer Conference",
-          eventDate: "April 22, 2025",
-          eventTime: "9:00 AM - 6:00 PM",
-          venue: "Tech Hub, San Francisco",
-          address: "456 Tech Street, San Francisco, CA 94102",
-          ticketType: "General Admission",
-          seatNumber: "GA-205",
-          price: "0.05 AVAX",
-          qrCode: "QR987654321",
-          status: "Valid",
-          description: "Access to all general sessions, workshops, and networking areas.",
-          image: mockImages[1],
-          mintDate: "2024-12-10T14:15:00Z",
-          owner: walletAddress
+        setUserTickets(formattedTickets);
+        if (formattedTickets.length > 0 && !selectedTicket) {
+          setSelectedTicket(formattedTickets[0]);
         }
-      ];
-
-      // Add minted tickets to demo tickets
-      const allTickets = [...demoTickets, ...parsedMintedTickets.map((ticket, index) => ({
-        ...ticket,
-        tokenId: `minted_${index + 3}`,
-        image: mockImages[index % mockImages.length],
-        owner: walletAddress,
-        mintDate: ticket.mintDate || new Date().toISOString()
-      }))];
-
-      setUserTickets(allTickets);
-      if (allTickets.length > 0 && !selectedTicket) {
-        setSelectedTicket(allTickets[0]);
+      } else {
+        setUserTickets([]);
       }
-
     } catch (error) {
       console.error("Error fetching tickets:", error);
       setError("Failed to fetch your tickets. Please try again.");
+      setUserTickets([]);
     } finally {
       setIsLoading(false);
     }
