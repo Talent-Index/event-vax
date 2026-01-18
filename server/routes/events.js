@@ -1,5 +1,5 @@
 import express from 'express';
-import { insertEvent, getAllEvents, getEventById, updateEvent, deleteEvent } from '../utils/database.js';
+import { insertEvent, getAllEvents, getEventById, updateEvent, deleteEvent, getEventsByCreator } from '../utils/database.js';
 
 const router = express.Router();
 
@@ -53,6 +53,25 @@ router.get('/', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to fetch events',
+            details: error.message
+        });
+    }
+});
+
+// Get events by creator wallet address
+router.get('/creator/:walletAddress', async (req, res) => {
+    try {
+        const events = getEventsByCreator(req.params.walletAddress);
+        res.json({
+            success: true,
+            count: events.length,
+            events: events
+        });
+    } catch (error) {
+        console.error('Error fetching creator events:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch creator events',
             details: error.message
         });
     }
