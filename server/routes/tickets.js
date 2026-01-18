@@ -75,4 +75,24 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Get tickets by wallet address
+router.get('/wallet/:walletAddress', async (req, res) => {
+    try {
+        const { walletAddress } = req.params;
+        
+        const tickets = db.prepare(`
+            SELECT t.*, e.event_name, e.event_date, e.venue, e.flyer_image, e.description
+            FROM tickets t
+            LEFT JOIN events e ON t.event_id = e.id
+            WHERE t.wallet_address = ?
+            ORDER BY t.created_at DESC
+        `).all(walletAddress);
+
+        res.json({ success: true, tickets });
+    } catch (error) {
+        console.error('❌ Error fetching tickets:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch tickets' });
+    }
+});
+
 export default router;
