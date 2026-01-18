@@ -188,9 +188,25 @@ const QuantumEventCreator = () => {
       return;
     }
 
+    // ✅ Validate event date is in the future
+    const selectedDate = new Date(formData.eventDate);
+    const now = new Date();
+
+    if (selectedDate <= now) {
+      alert('❌ Event date must be in the future! Please select a date and time that hasn\'t passed yet.');
+      console.warn('⚠️ Event creation failed: Selected date is in the past');
+      return;
+    }
+
+    // Validate all required fields
+    if (!formData.eventName || !formData.venue) {
+      alert('❌ Please fill in all required fields (Event Name and Venue)');
+      return;
+    }
+
     try {
       // Convert event date to Unix timestamp
-      const eventDate = Math.floor(new Date(formData.eventDate).getTime() / 1000);
+      const eventDate = Math.floor(selectedDate.getTime() / 1000);
       const eventEndDate = eventDate + (24 * 60 * 60); // Add 24 hours
 
       // Connect to blockchain
@@ -203,12 +219,17 @@ const QuantumEventCreator = () => {
         eventDate,
         eventEndDate,
         formData.eventName,
-        `ipfs://eventverse/${formData.eventName.replace(/\s+/g, '-').toLowerCase()}`
+        `ipfs://eventverse/${formData.eventName.replace(/\s+/g, '-').toLowerCase()}`,
+        {
+          gasLimit: 3000000,
+          maxFeePerGas: ethers.parseUnits("25", "gwei"),
+          maxPriorityFeePerGas: ethers.parseUnits("25", "gwei")
+        }
       );
 
-      console.log('Blockchain transaction submitted:', tx.hash);
+      console.log('✅ Blockchain transaction submitted:', tx.hash);
       const receipt = await tx.wait();
-      console.log('Event created on blockchain!');
+      console.log('✅ Event created on blockchain!');
 
       // Extract blockchain event ID from EventCreated event
       let blockchainEventId = null;
@@ -244,7 +265,12 @@ const QuantumEventCreator = () => {
           ethers.parseEther(formData.regularPrice || "0.01"),
           ethers.parseEther(formData.vipPrice || "0.05"),
           ethers.parseEther(formData.vvipPrice || "0.1")
-        ]
+        ],
+        {
+          gasLimit: 3000000,
+          maxFeePerGas: ethers.parseUnits("25", "gwei"),
+          maxPriorityFeePerGas: ethers.parseUnits("25", "gwei")
+        }
       );
       await tierTx.wait();
       console.log('✅ Ticket tiers created!');
@@ -276,15 +302,35 @@ const QuantumEventCreator = () => {
       };
 
       // Send to backend API
-      const response = await fetch('http://localhost:8080/api/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(eventData)
-      });
+      let response, result;
+      try {
+        response = await fetch('http://localhost:8080/api/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(eventData)
+        });
+        result = await response.json();
+      } catch (fetchError) {
+        console.warn('⚠️ Backend API unavailable - event created on blockchain but not saved to database');
+        alert(`✅ Event created on blockchain successfully!\n\n⚠️ Note: Backend server is not running, so event wasn\'t saved to database.\n\nBlockchain Event ID: ${blockchainEventId}\nTransaction: ${tx.hash}`);
 
-      const result = await response.json();
+        // Reset form even if backend failed
+        setFormData({
+          eventName: '',
+          eventDate: '',
+          venue: '',
+          regularPrice: '',
+          vipPrice: '',
+          vvipPrice: '',
+          description: ''
+        });
+        setEventFlyer(null);
+        setFlyerPreview(null);
+        setUploadError('');
+        return;
+      }
 
       if (result.success) {
         alert(`✅ Event created successfully! Event ID: ${result.eventId}`);
@@ -315,14 +361,45 @@ const QuantumEventCreator = () => {
     } catch (error) {
       // Check if user rejected the transaction
       if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
-        console.log('Transaction cancelled by user');
+        console.log('ℹ️ Transaction cancelled by user');
         alert('Transaction cancelled. No changes were made.');
         return;
       }
 
-      // Handling actual errors
-      console.error('Error creating event:', error);
-      alert('❌ Failed to create event. Please try again.');
+      // Check for specific smart contract errors
+      const errorMessage = error.message || error.toString();
+
+      // Event date in the past
+      if (errorMessage.includes('EventDateInPast') || error.data?.message?.includes('EventDateInPast')) {
+        console.error('❌ Event creation failed: Event date is in the past');
+        alert('❌ Event date must be in the future!\n\nPlease select a date and time that hasn\'t passed yet.');
+        return;
+      }
+
+      // Invalid event duration
+      if (errorMessage.includes('InvalidEventDuration')) {
+        console.error('❌ Event creation failed: Invalid event duration');
+        alert('❌ Invalid event duration!\n\nThe event end time must be after the start time.');
+        return;
+      }
+
+      // Contract is paused
+      if (errorMessage.includes('EnforcedPause')) {
+        console.error('❌ Event creation failed: Contract is paused');
+        alert('❌ Event creation is temporarily paused.\n\nPlease try again later.');
+        return;
+      }
+
+      // Transaction reverted (generic)
+      if (errorMessage.includes('transaction execution reverted') || error.code === 'CALL_EXCEPTION') {
+        console.error('❌ Transaction reverted:', error);
+        alert('❌ Transaction failed!\n\nThis could be due to:\n• Event date is in the past\n• Invalid event details\n• Network issues\n\nPlease check your inputs and try again.');
+        return;
+      }
+
+      // Handling other errors
+      console.error('❌ Error creating event:', error);
+      alert('❌ Failed to create event. Please check the console for details and try again.');
     }
   };
 
@@ -446,6 +523,7 @@ const QuantumEventCreator = () => {
                   onChange={handleInputChange}
                   onFocus={() => setFocusedField('eventDate')}
                   onBlur={() => setFocusedField(null)}
+                  min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
                   className={`w-full bg-gray-800/50 border ${focusedField === 'eventDate' ? 'border-blue-500' : 'border-gray-700'
                     } rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-300`}
                   required

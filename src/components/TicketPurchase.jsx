@@ -39,6 +39,8 @@ export default function TicketPurchase() {
       const tx = await signer.sendTransaction({
         to: CONTRACTS.MARKETPLACE,
         value: totalCost,
+        maxFeePerGas: ethers.parseUnits('25', 'gwei'),
+        maxPriorityFeePerGas: ethers.parseUnits('1', 'gwei')
       });
 
       await tx.wait(); // Wait for the transaction to be mined
