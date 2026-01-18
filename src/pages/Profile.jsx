@@ -57,7 +57,7 @@ const Profile = () => {
 
       if (result.success && result.events.length > 0) {
         const formattedEvents = result.events.map((event) => ({
-          id: event.id,
+          id: event.blockchain_event_id || event.id,
           name: event.event_name,
           date: new Date(event.event_date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }),
           attendees: event.attendees || 0,
