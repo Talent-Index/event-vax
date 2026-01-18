@@ -73,27 +73,58 @@ Eventverse is a revolutionary blockchain-based ticketing platform engineered to 
    ```
    Verify installation with: `node --version` and `npm --version`
 
-2. **Clone the repository:**
+2. **Install Core Wallet:**
+
+   Core is the recommended wallet for interacting with Avalanche and the EventVax platform.
+   
+   - **Download:** [https://core.app/](https://core.app/)
+   - **Browser Extension:** Available for Chrome, Firefox, Brave, and Edge
+   - **Mobile App:** Available on iOS and Android
+   
+   **Setup Steps:**
+   1. Install the Core browser extension or mobile app
+   2. Create a new wallet or import an existing one
+   3. Securely backup your recovery phrase
+   4. Switch to **Fuji Testnet** in network settings
+
+3. **Get Test AVAX (Fuji Faucet):**
+
+   You'll need test AVAX to interact with the platform on Fuji testnet.
+   
+   **Option 1: Official Avalanche Faucet**
+   - Visit: [https://build.avax.network/console/primary-network/faucet](https://build.avax.network/console/primary-network/faucet)
+   - Connect your Core wallet
+   - Select "Fuji (C-Chain)"
+   - Request test tokens (receive 0.5 AVAX)
+   
+   **Option 2: Core Faucet**
+   - Open Core wallet
+   - Navigate to the faucet section
+   - Request test AVAX directly from the wallet interface
+   
+   > 💡 **Note:** Faucet requests are limited to once per 24 hours per address
+
+4. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/mokayaj857/eventvax.git
+   git clone https://github.com/JosephOkumu/event-vax.git
 
    ```
 
-2. **Install dependencies:**
+5. **Install dependencies:**
 
    ```bash
    npm install
    ```
 
-3. **Compile smart contracts:**
+6. **Compile smart contracts:**
 
    ```bash
    cd contracts
    forge build
    ```
 
-4. **Configure Avalanche network:**
+7. **Configure Avalanche network:**
    Create `.env` file in `contracts/` directory:
    ```
    PRIVATE_KEY=your_private_key
@@ -101,13 +132,13 @@ Eventverse is a revolutionary blockchain-based ticketing platform engineered to 
    SNOWTRACE_API_KEY=your_api_key
    ```
 
-5. **Deploy contracts (Already deployed to Fuji):**
+8. **Deploy contracts (Already deployed to Fuji):**
 
    ```bash
    forge script script/Deploy.s.sol --rpc-url $FUJI_RPC_URL --broadcast --verify
    ```
 
-6. **Run the application locally:**
+9. **Run the application locally:**
 
    ```bash
    # First, install and run the backend server
