@@ -9,6 +9,8 @@ const Profile = () => {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
+  const [userTickets, setUserTickets] = useState([]);
+  const [userEvents, setUserEvents] = useState([]);
   const [expandedSections, setExpandedSections] = useState({
     achievements: false,
     tickets: false,
@@ -20,6 +22,53 @@ const Profile = () => {
     setIsVisible(true);
     checkWalletConnection();
   }, []);
+
+  useEffect(() => {
+    if (walletAddress) {
+      fetchUserTickets();
+      fetchUserEvents();
+    }
+  }, [walletAddress]);
+
+  const fetchUserTickets = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/tickets/wallet/${walletAddress}`);
+      const result = await response.json();
+
+      if (result.success && result.tickets.length > 0) {
+        const formattedTickets = result.tickets.map((ticket) => ({
+          id: ticket.id,
+          eventName: ticket.event_name,
+          date: new Date(ticket.event_date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+          status: 'Active',
+          type: ['Regular', 'VIP', 'VVIP'][ticket.tier_id] || 'General'
+        }));
+        setUserTickets(formattedTickets);
+      }
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+    }
+  };
+
+  const fetchUserEvents = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/events/creator/${walletAddress}`);
+      const result = await response.json();
+
+      if (result.success && result.events.length > 0) {
+        const formattedEvents = result.events.map((event) => ({
+          id: event.id,
+          name: event.event_name,
+          date: new Date(event.event_date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+          attendees: event.attendees || 0,
+          status: new Date(event.event_date) > new Date() ? 'Upcoming' : 'Completed'
+        }));
+        setUserEvents(formattedEvents);
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    }
+  };
 
   const checkWalletConnection = async () => {
     if (typeof window.ethereum !== "undefined") {
@@ -53,20 +102,12 @@ const Profile = () => {
       { id: 2, title: 'Event Creator', description: 'Created 5+ events', icon: Zap, color: 'blue' },
       { id: 3, title: 'Super Attendee', description: 'Attended 10+ events', icon: Target, color: 'green' }
     ],
-    tickets: [
-      { id: 1, eventName: 'Blockchain Summit 2025', date: '2025-03-15', status: 'Active', type: 'VIP' },
-      { id: 2, eventName: 'Web3 Music Festival', date: '2025-04-20', status: 'Active', type: 'Regular' },
-      { id: 3, eventName: 'NFT Art Exhibition', date: '2025-05-05', status: 'Upcoming', type: 'VVIP' }
-    ],
+    tickets: userTickets.length > 0 ? userTickets : [],
     poaps: [
       { id: 1, name: 'EventVerse Pioneer', event: 'Launch Event', date: '2024-12-01' },
       { id: 2, name: 'Community Builder', event: 'Community Meetup', date: '2025-01-15' }
     ],
-    events: [
-      { id: 1, name: 'Tech Conference 2025', date: '2025-06-10', attendees: 150, status: 'Upcoming' },
-      { id: 2, name: 'Crypto Meetup', date: '2025-07-22', attendees: 75, status: 'Upcoming' },
-      { id: 3, name: 'Web3 Workshop', date: '2024-12-15', attendees: 50, status: 'Completed' }
-    ]
+    events: userEvents.length > 0 ? userEvents : []
   };
 
   const SectionHeader = ({ title, icon: Icon, isExpanded, onClick, count }) => (
