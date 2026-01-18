@@ -16,7 +16,7 @@ const AVALANCHE_MAINNET_PARAMS = {
 };
 
 const Ticket = () => {
-  const { walletAddress, isConnecting, connectWallet, isConnected } = useWallet();
+  const { walletAddress, isConnecting, connectWallet, isConnected, networkId, EXPECTED_CHAIN_ID, switchToAvalanche } = useWallet();
   
   // UI States
   const [isVisible, setIsVisible] = useState(false);
@@ -214,6 +214,27 @@ const Ticket = () => {
                   <div className="relative z-10 flex items-center justify-center space-x-2">
                     {isConnecting ? <Loader className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
                     <span>{isConnecting ? "Connecting..." : "Connect Wallet"}</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          ) : networkId !== EXPECTED_CHAIN_ID ? (
+            <div className="text-center">
+              <div className="mb-8 p-6 sm:p-8 bg-red-900/20 backdrop-blur-xl rounded-2xl border border-red-500/30">
+                <AlertCircle className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-red-400" />
+                <h2 className="text-xl sm:text-2xl font-bold mb-4">Wrong Network</h2>
+                <p className="text-sm sm:text-base text-gray-400 mb-6 px-4">
+                  Please switch to Avalanche Fuji Testnet to view your tickets
+                </p>
+                <button
+                  onClick={switchToAvalanche}
+                  className="group relative px-6 py-3 rounded-xl overflow-hidden w-full sm:w-auto"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600
+                    group-hover:from-red-500 group-hover:to-orange-500 transition-colors duration-300" />
+                  <div className="relative z-10 flex items-center justify-center space-x-2">
+                    <AlertCircle className="w-5 h-5" />
+                    <span>Switch to Avalanche Fuji</span>
                   </div>
                 </button>
               </div>
