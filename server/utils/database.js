@@ -117,6 +117,20 @@ export const getEventById = (id) => {
     return db.prepare(sql).get(id);
 };
 
+// Get events by creator address
+export const getEventsByCreator = (creatorAddress) => {
+    const sql = `
+        SELECT e.*, 
+               COUNT(DISTINCT t.wallet_address) as attendees
+        FROM events e
+        LEFT JOIN tickets t ON e.id = t.event_id
+        WHERE LOWER(e.creator_address) = LOWER(?)
+        GROUP BY e.id
+        ORDER BY e.event_date DESC
+    `;
+    return db.prepare(sql).all(creatorAddress);
+};
+
 // Update event
 export const updateEvent = (id, eventData) => {
     const sql = `
