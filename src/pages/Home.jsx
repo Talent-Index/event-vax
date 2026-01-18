@@ -115,7 +115,18 @@ const UltimateEventPlatform = () => {
       const result = await response.json();
 
       if (result.success) {
-        setEvents(result.data);
+        const validEvents = result.data.filter(event => {
+          // Filter out corrupted events (generic names, no prices, "Blockchain Event" venue)
+          const isCorrupted = (
+            event.event_name?.startsWith('Event #') &&
+            event.venue === 'Blockchain Event' &&
+            (!event.regular_price || event.regular_price === '0' || event.regular_price === '0.0')
+          );
+          
+          return !isCorrupted;
+        });
+        
+        setEvents(validEvents);
       } else {
         console.error('Failed to fetch events:', result.error);
       }
@@ -124,6 +135,29 @@ const UltimateEventPlatform = () => {
     } finally {
       setIsLoadingEvents(false);
     }
+  };
+
+  const getFilteredEvents = () => {
+    const now = new Date();
+    
+    return events.filter(event => {
+      const eventDate = new Date(event.event_date);
+      const isPast = eventDate < now;
+      const isUpcoming = eventDate > now;
+      const isOngoing = Math.abs(eventDate - now) < 24 * 60 * 60 * 1000; // Within 24 hours
+      
+      switch (activeEventFilter) {
+        case 'upcoming':
+          return isUpcoming && !isOngoing;
+        case 'ongoing':
+          return isOngoing;
+        case 'past':
+          return isPast;
+        case 'all':
+        default:
+          return true;
+      }
+    });
   };
 
 
@@ -325,40 +359,8 @@ const UltimateEventPlatform = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {(events.length > 0 ? events : [
-                {
-                  id: 1,
-                  event_name: "Blockchain Summit 2025",
-                  event_date: "2025-03-15T10:00",
-                  regular_price: "0.5",
-                  venue: "Convention Center",
-                  flyer_image: "/src/assets/imag.png"
-                },
-                {
-                  id: 2,
-                  event_name: "Web3 Music Festival",
-                  event_date: "2025-04-20T18:00",
-                  regular_price: "1.2",
-                  venue: "Open Air Arena",
-                  flyer_image: "/src/assets/dr.png"
-                },
-                {
-                  id: 3,
-                  event_name: "NFT Art Exhibition",
-                  event_date: "2025-05-05T14:00",
-                  regular_price: "0.8",
-                  venue: "Art Gallery",
-                  flyer_image: "/src/assets/im.png"
-                },
-                {
-                  id: 4,
-                  event_name: "DeFi Conference",
-                  event_date: "2025-06-10T09:00",
-                  regular_price: "0.3",
-                  venue: "Tech Hub",
-                  flyer_image: "/src/assets/rb.png"
-                }
-              ]).map((event, index) => {
+              {getFilteredEvents().length > 0 ? (
+                getFilteredEvents().map((event, index) => {
                 const eventDate = new Date(event.event_date);
                 const formattedDate = eventDate.toLocaleDateString('en-US', {
                   month: 'long',
@@ -406,7 +408,18 @@ const UltimateEventPlatform = () => {
                     </div>
                   </div>
                 );
-              })}
+              })) : (
+                <div className="col-span-full text-center py-20">
+                  <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400">No upcoming events available</p>
+                  <button
+                    onClick={() => handleProtectedNavigation('/Myevent')}
+                    className="mt-4 px-6 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors"
+                  >
+                    Create Your First Event
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
