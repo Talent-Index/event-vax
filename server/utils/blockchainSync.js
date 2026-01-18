@@ -6,7 +6,11 @@ const CONTRACTS = {
     EVENT_MANAGER: '0x1651f730a846eD23411180eC71C9eFbFCD05A871'
 };
 
-const RPC_URL = 'https://api.avax-test.network/ext/bc/C/rpc';
+const RPC_URLS = [
+    'https://api.avax-test.network/ext/bc/C/rpc',
+    'https://avalanche-fuji-c-chain-rpc.publicnode.com',
+    'https://rpc.ankr.com/avalanche_fuji'
+];
 
 const EVENT_MANAGER_ABI = [
     'event EventCreated(uint256 indexed eventId, address indexed organizer, string name, uint256 eventDate, uint256 eventEndDate)',
@@ -17,7 +21,21 @@ export async function syncEventsFromBlockchain() {
     try {
         console.log('🔄 Starting blockchain sync...');
         
-        const provider = new ethers.JsonRpcProvider(RPC_URL);
+        let provider;
+        for (const rpcUrl of RPC_URLS) {
+            try {
+                provider = new ethers.JsonRpcProvider(rpcUrl, 43113, { staticNetwork: true });
+                await provider.getBlockNumber();
+                break;
+            } catch (err) {
+                continue;
+            }
+        }
+        
+        if (!provider) {
+            throw new Error('All RPC endpoints failed');
+        }
+        
         const eventManager = new ethers.Contract(CONTRACTS.EVENT_MANAGER, EVENT_MANAGER_ABI, provider);
         
         const filter = eventManager.filters.EventCreated();
