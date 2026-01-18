@@ -25,7 +25,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Initialize database
 try {
   initDatabase();
-  syncEventsFromBlockchain();
+  syncEventsFromBlockchain().catch(err => console.error('Blockchain sync error:', err.message));
 } catch (error) {
   console.error('Failed to initialize database:', error);
   process.exit(1);
