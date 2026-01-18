@@ -160,15 +160,10 @@ const UltimateEventPlatform = () => {
   };
 
   const handleProtectedNavigation = (path) => {
-    console.log('Navigation check:', { isConnected, walletAddress });
-
     if (!isConnected || !walletAddress) {
-      console.log('Wallet not connected, showing sign in prompt');
       setShowSignInPrompt(true);
       return;
     }
-
-    console.log('Wallet connected, navigating to:', path);
     navigate(path);
   };
 

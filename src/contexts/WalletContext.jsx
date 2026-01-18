@@ -21,7 +21,7 @@ export const WalletProvider = ({ children }) => {
   // Check wallet connection on mount
   useEffect(() => {
     checkWalletConnection();
-    
+
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('chainChanged', handleChainChanged);
@@ -84,15 +84,15 @@ export const WalletProvider = ({ children }) => {
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
       });
-      
+
       if (accounts.length > 0) {
         const signer = await provider.getSigner();
         const address = await signer.getAddress();
         const network = await provider.getNetwork();
-        
+
         setWalletAddress(address);
         setNetworkId(Number(network.chainId));
-        
+
         return address;
       }
     } catch (error) {
@@ -109,11 +109,6 @@ export const WalletProvider = ({ children }) => {
   };
 
   const isConnected = !!walletAddress;
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('WalletContext state changed:', { walletAddress, isConnected, isConnecting, networkId });
-  }, [walletAddress, isConnected, isConnecting, networkId]);
 
   const value = {
     walletAddress,
