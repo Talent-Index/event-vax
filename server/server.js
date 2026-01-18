@@ -7,6 +7,7 @@ import eventsRouter from './routes/events.js';
 import ticketsRouter from './routes/tickets.js';
 import metadataRouter from './routes/metadata.js';
 import { initDatabase } from './utils/database.js';
+import { syncEventsFromBlockchain } from './utils/blockchainSync.js';
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Initialize database
 try {
   initDatabase();
+  syncEventsFromBlockchain();
 } catch (error) {
   console.error('Failed to initialize database:', error);
   process.exit(1);
