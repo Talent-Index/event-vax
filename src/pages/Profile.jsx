@@ -4,6 +4,7 @@ import {
   User, Trophy, Ticket, Award, Calendar, ChevronDown, ChevronUp, 
   Star, Zap, Target, Gift, ExternalLink, Eye, BarChart3 
 } from 'lucide-react';
+import { useAchievements } from '../hooks/useAchievements';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ const Profile = () => {
   const [walletAddress, setWalletAddress] = useState('');
   const [userTickets, setUserTickets] = useState([]);
   const [userEvents, setUserEvents] = useState([]);
+  const { achievements, poaps, loading: achievementsLoading } = useAchievements(walletAddress);
   const [expandedSections, setExpandedSections] = useState({
     achievements: false,
     tickets: false,
@@ -56,7 +58,17 @@ const Profile = () => {
       const result = await response.json();
 
       if (result.success && result.events.length > 0) {
-        const formattedEvents = result.events.map((event) => ({
+        // Filter out corrupted events
+        const validEvents = result.events.filter(event => {
+          const isCorrupted = (
+            event.event_name?.startsWith('Event #') &&
+            event.venue === 'Blockchain Event' &&
+            (!event.regular_price || event.regular_price === '0' || event.regular_price === '0.0')
+          );
+          return !isCorrupted;
+        });
+
+        const formattedEvents = validEvents.map((event) => ({
           id: event.blockchain_event_id || event.id,
           name: event.event_name,
           date: new Date(event.event_date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }),
@@ -95,18 +107,19 @@ const Profile = () => {
     }));
   };
 
-  // Dummy data for demonstration
+  // Map icon names to components
+  const iconMap = {
+    Star, Zap, Target, Award, Gift
+  };
+
+  // User data with real achievements
   const userData = {
-    achievements: [
-      { id: 1, title: 'Early Adopter', description: 'Joined EventVerse in 2024', icon: Star, color: 'purple' },
-      { id: 2, title: 'Event Creator', description: 'Created 5+ events', icon: Zap, color: 'blue' },
-      { id: 3, title: 'Super Attendee', description: 'Attended 10+ events', icon: Target, color: 'green' }
-    ],
+    achievements: achievements.map(ach => ({
+      ...ach,
+      icon: iconMap[ach.icon] || Star
+    })),
     tickets: userTickets.length > 0 ? userTickets : [],
-    poaps: [
-      { id: 1, name: 'EventVerse Pioneer', event: 'Launch Event', date: '2024-12-01' },
-      { id: 2, name: 'Community Builder', event: 'Community Meetup', date: '2025-01-15' }
-    ],
+    poaps: poaps.length > 0 ? poaps : [],
     events: userEvents.length > 0 ? userEvents : []
   };
 
@@ -287,27 +300,43 @@ const Profile = () => {
             {expandedSections.poaps && (
               <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-black/20 backdrop-blur-xl
                 rounded-lg border border-purple-500/20">
-                {userData.poaps.map((poap, index) => (
-                  <div
-                    key={poap.id}
-                    className="group p-4 bg-black/40 backdrop-blur-xl rounded-lg border
-                      border-purple-500/30 hover:border-purple-500/50 transition-all duration-300
-                      hover:scale-105"
-                    style={{ transitionDelay: `${index * 50}ms` }}
-                  >
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-blue-600
-                        flex items-center justify-center">
-                        <Gift className="w-6 h-6 text-white" />
+                {achievementsLoading ? (
+                  <div className="col-span-full text-center py-8 text-gray-400">
+                    Loading POAPs from blockchain...
+                  </div>
+                ) : userData.poaps.length > 0 ? (
+                  userData.poaps.map((poap, index) => (
+                    <div
+                      key={poap.id}
+                      className="group p-4 bg-black/40 backdrop-blur-xl rounded-lg border
+                        border-purple-500/30 hover:border-purple-500/50 transition-all duration-300
+                        hover:scale-105"
+                      style={{ transitionDelay: `${index * 50}ms` }}
+                    >
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-blue-600
+                          flex items-center justify-center">
+                          <Gift className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-white">{poap.name}</h4>
+                          <p className="text-xs text-gray-400">{poap.event}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-sm font-semibold text-white">{poap.name}</h4>
-                        <p className="text-xs text-gray-400">{poap.event}</p>
+                      <p className="text-xs text-gray-500">Token ID: #{poap.tokenId}</p>
+                      <div className="mt-2 flex items-center space-x-1">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-xs text-green-400">On-Chain Verified</span>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500">Collected: {poap.date}</p>
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8 text-gray-400">
+                    <Gift className="w-12 h-12 mx-auto mb-2 text-gray-600" />
+                    <p>No POAPs collected yet</p>
+                    <p className="text-xs mt-1">Attend events to earn POAPs!</p>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
