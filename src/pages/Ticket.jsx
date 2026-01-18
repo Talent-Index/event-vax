@@ -65,8 +65,11 @@ const Ticket = () => {
           image: ticket.flyer_image || `https://images.unsplash.com/photo-${1540575467063 + index}?w=400&h=300&fit=crop`,
           mintDate: ticket.created_at,
           owner: walletAddress,
-          quantity: ticket.quantity
+          quantity: ticket.quantity,
+          transactionHash: ticket.transaction_hash
         }));
+
+        console.log('🔍 First ticket transaction hash:', formattedTickets[0]?.transactionHash);
 
         setUserTickets(formattedTickets);
         if (formattedTickets.length > 0 && !selectedTicket) {
@@ -91,6 +94,19 @@ const Ticket = () => {
     } catch (error) {
       console.error("Error connecting wallet:", error);
       setError(error.message || "Failed to connect wallet. Please try again.");
+    }
+  };
+
+  const handleViewOnExplorer = () => {
+    // Find the latest ticket data from userTickets array
+    const currentTicket = userTickets.find(t => t.tokenId === selectedTicket?.tokenId);
+    console.log('🔍 Current ticket from array:', currentTicket);
+    console.log('🔍 Transaction hash:', currentTicket?.transactionHash);
+    
+    if (currentTicket && currentTicket.transactionHash) {
+      window.open(`${NETWORK.EXPLORER}/tx/${currentTicket.transactionHash}`, '_blank');
+    } else {
+      alert('Transaction hash not available for this ticket');
     }
   };
 
@@ -413,7 +429,10 @@ const Ticket = () => {
                                   <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                   Resell Ticket
                                 </button>
-                                <button className="w-full bg-green-700 hover:bg-green-600 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-colors duration-300 flex items-center justify-center text-sm sm:text-base">
+                                <button
+                                  onClick={handleViewOnExplorer}
+                                  className="w-full bg-green-700 hover:bg-green-600 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-colors duration-300 flex items-center justify-center text-sm sm:text-base"
+                                >
                                   <Eye className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                   View on Explorer
                                 </button>
