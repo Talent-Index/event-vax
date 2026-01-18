@@ -52,10 +52,8 @@ const QuantumMintNFT = () => {
   }, [eventId]);
 
   useEffect(() => {
-    if (walletAddress) {
+    if (walletAddress && currentStep < 2) {
       setCurrentStep(2);
-    } else {
-      setCurrentStep(1);
     }
   }, [walletAddress]);
 
@@ -161,7 +159,8 @@ const QuantumMintNFT = () => {
       await connectWallet();
       setCurrentStep(2);
     } catch (error) {
-      setError(error.message || 'Error connecting wallet');
+      console.error('❌ Wallet connection error:', error);
+      setError('Failed to connect wallet. Please try again.');
     }
   };
 
@@ -206,12 +205,9 @@ const QuantumMintNFT = () => {
     if (!walletAddress) return;
 
     setIsLoading(true);
-    setMintingStatus('Connecting to wallet...');
+    setMintingStatus('Preparing transaction...');
 
     try {
-      // Ensure fresh connection
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
 
@@ -257,7 +253,9 @@ const QuantumMintNFT = () => {
 
       // Purchase tickets on blockchain
       const tx = await ticketContract.purchaseTicket(tierId, ticketQuantity, {
-        value: totalCost
+        value: totalCost,
+        maxFeePerGas: ethers.parseUnits('25', 'gwei'),
+        maxPriorityFeePerGas: ethers.parseUnits('1', 'gwei')
       });
 
       setMintingStatus('Waiting for blockchain confirmation...');
@@ -286,6 +284,15 @@ const QuantumMintNFT = () => {
 
       const backendResult = await backendResponse.json();
 
+      // Set ticket data for success modal
+      setMintedTicketData({
+        eventName: eventData.name,
+        ticketType: selectedTicketType,
+        totalQuantity: ticketQuantity,
+        price: eventData.ticketPrices[selectedTicketType],
+        tokenId: tx.hash
+      });
+
       if (!backendResponse.ok || !backendResult.success) {
         console.warn('Backend save failed:', backendResult);
         setMintingStatus('⚠️ Tickets purchased on blockchain but database save failed');
@@ -301,13 +308,28 @@ const QuantumMintNFT = () => {
       }
 
     } catch (error) {
+      console.error('❌ Minting error details:', error);
+      
       if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
         setMintingStatus(null);
-        alert('Transaction cancelled');
+        setError('Transaction cancelled by user');
         return;
       }
-      console.error('Minting error:', error);
-      setError(error.message || 'Failed to purchase tickets');
+      
+      // User-friendly error messages
+      let userMessage = 'Failed to purchase tickets';
+      
+      if (error.code === 'INSUFFICIENT_FUNDS') {
+        userMessage = 'Insufficient AVAX balance. Please add funds to your wallet.';
+      } else if (error.message?.includes('insufficient funds')) {
+        userMessage = 'Insufficient AVAX balance. Please add funds to your wallet.';
+      } else if (error.message?.includes('user rejected')) {
+        userMessage = 'Transaction cancelled by user';
+      } else if (error.message?.includes('network')) {
+        userMessage = 'Network error. Please check your connection.';
+      }
+      
+      setError(userMessage);
       setMintingStatus(null);
     } finally {
       setIsLoading(false);
@@ -611,7 +633,7 @@ const QuantumMintNFT = () => {
                         <div className="ml-6 text-right">
                           <p className="text-sm text-gray-400 mb-1">Total Price</p>
                           <p className="text-2xl sm:text-3xl font-bold text-purple-400">
-                            {(parseFloat(eventData.ticketPrices[selectedTicketType]) * ticketQuantity).toFixed(2)} AVAX
+                            {(parseFloat(eventData.ticketPrices[selectedTicketType]) * ticketQuantity).toFixed(3)} AVAX
                           </p>
                         </div>
                       </div>
@@ -723,7 +745,7 @@ const QuantumMintNFT = () => {
                               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
                             </div>
                             <span className="text-xs text-purple-200">
-                              Total: {(parseFloat(eventData.ticketPrices[selectedTicketType]) * ticketQuantity).toFixed(2)} AVAX
+                              Total: {(parseFloat(eventData.ticketPrices[selectedTicketType]) * ticketQuantity).toFixed(3)} AVAX
                             </span>
                           </>
                         )}
