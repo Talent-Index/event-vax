@@ -248,6 +248,7 @@ const QuantumMintNFT = () => {
       const tierId = tierMap[selectedTicketType];
 
       // Calculate total cost (convert to AVAX for blockchain)
+      const price = eventData.ticketPrices[selectedTicketType];
       const priceInAVAX = toAVAX(price);
       const totalCost = ethers.parseEther((parseFloat(priceInAVAX) * ticketQuantity).toString());
 
