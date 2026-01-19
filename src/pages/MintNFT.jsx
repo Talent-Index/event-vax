@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import CommentRatingSection from '../components/CommentRatingSection';
 import { useWallet } from '../contexts/WalletContext';
+import { useCurrency } from '../utils/currency.jsx';
 import { ethers } from 'ethers';
 import { CONTRACTS } from '../config/contracts';
 import { EventFactoryABI, TicketNFTABI } from '../abi';
@@ -28,6 +29,7 @@ const QuantumMintNFT = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const eventId = searchParams.get('eventId');
+  const { format, toAVAX, currency } = useCurrency();
   const fromTicketPage = searchParams.get('fromTicket') === 'true';
 
   const { walletAddress, isConnecting, connectWallet } = useWallet();
@@ -134,7 +136,7 @@ const QuantumMintNFT = () => {
       attributes: [
         { trait_type: "Event", value: eventData.name },
         { trait_type: "Ticket Type", value: selected.label },
-        { trait_type: "Price", value: `${selected.price} AVAX` },
+        { trait_type: "Price", value: format(selected.price) },
         { trait_type: "Date", value: eventData.date },
         { trait_type: "Venue", value: eventData.venue }
       ]
@@ -245,9 +247,9 @@ const QuantumMintNFT = () => {
       const tierMap = { regular: 0, vip: 1, vvip: 2 };
       const tierId = tierMap[selectedTicketType];
 
-      // Calculate total cost
-      const price = eventData.ticketPrices[selectedTicketType];
-      const totalCost = ethers.parseEther((parseFloat(price) * ticketQuantity).toString());
+      // Calculate total cost (convert to AVAX for blockchain)
+      const priceInAVAX = toAVAX(price);
+      const totalCost = ethers.parseEther((parseFloat(priceInAVAX) * ticketQuantity).toString());
 
       setMintingStatus(`Purchasing ${ticketQuantity} ticket(s)...`);
 
@@ -529,7 +531,7 @@ const QuantumMintNFT = () => {
                           <h4 className="text-base sm:text-lg font-bold text-white">Regular</h4>
                         </div>
                         <p className="text-xl sm:text-2xl font-bold text-green-400 mb-1 sm:mb-2">
-                          {eventData.ticketPrices.regular} AVAX
+                          {format(eventData.ticketPrices.regular)}
                         </p>
                         <p className="text-xs sm:text-sm text-gray-400">Standard event access</p>
                       </button>
@@ -552,7 +554,7 @@ const QuantumMintNFT = () => {
                           <h4 className="text-base sm:text-lg font-bold text-white">VIP</h4>
                         </div>
                         <p className="text-xl sm:text-2xl font-bold text-blue-400 mb-1 sm:mb-2">
-                          {eventData.ticketPrices.vip} AVAX
+                          {format(eventData.ticketPrices.vip)}
                         </p>
                         <p className="text-xs sm:text-sm text-gray-400">Premium access & perks</p>
                       </button>
@@ -575,7 +577,7 @@ const QuantumMintNFT = () => {
                           <h4 className="text-base sm:text-lg font-bold text-white">VVIP</h4>
                         </div>
                         <p className="text-xl sm:text-2xl font-bold text-purple-400 mb-1 sm:mb-2">
-                          {eventData.ticketPrices.vvip} AVAX
+                          {format(eventData.ticketPrices.vvip)}
                         </p>
                         <p className="text-xs sm:text-sm text-gray-400">Exclusive VIP experience</p>
                       </button>
@@ -633,7 +635,7 @@ const QuantumMintNFT = () => {
                         <div className="ml-6 text-right">
                           <p className="text-sm text-gray-400 mb-1">Total Price</p>
                           <p className="text-2xl sm:text-3xl font-bold text-purple-400">
-                            {(parseFloat(eventData.ticketPrices[selectedTicketType]) * ticketQuantity).toFixed(3)} AVAX
+                            {format((parseFloat(eventData.ticketPrices[selectedTicketType]) * ticketQuantity).toFixed(4))}
                           </p>
                         </div>
                       </div>
@@ -745,7 +747,7 @@ const QuantumMintNFT = () => {
                               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
                             </div>
                             <span className="text-xs text-purple-200">
-                              Total: {(parseFloat(eventData.ticketPrices[selectedTicketType]) * ticketQuantity).toFixed(3)} AVAX
+                              Total: {format((parseFloat(eventData.ticketPrices[selectedTicketType]) * ticketQuantity).toFixed(4))}
                             </span>
                           </>
                         )}
@@ -894,7 +896,7 @@ const QuantumMintNFT = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Total Price:</span>
                     <span className="text-purple-400 font-bold">
-                      {(parseFloat(mintedTicketData.price) * (mintedTicketData.totalQuantity || 1)).toFixed(2)} AVAX
+                      {format((parseFloat(mintedTicketData.price) * (mintedTicketData.totalQuantity || 1)).toFixed(4))}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">

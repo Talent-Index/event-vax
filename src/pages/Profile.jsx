@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, Trophy, Ticket, Award, Calendar, ChevronDown, ChevronUp, 
-  Star, Zap, Target, Gift, ExternalLink, Eye, BarChart3 
+  Star, Zap, Target, Gift, ExternalLink, Eye, BarChart3, DollarSign 
 } from 'lucide-react';
 import { useAchievements } from '../hooks/useAchievements';
+import { useCurrency } from '../utils/currency.jsx';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const Profile = () => {
   const [userTickets, setUserTickets] = useState([]);
   const [userEvents, setUserEvents] = useState([]);
   const { achievements, poaps, loading: achievementsLoading } = useAchievements(walletAddress);
+  const { currency, changeCurrency } = useCurrency();
   const [expandedSections, setExpandedSections] = useState({
     achievements: false,
     tickets: false,
@@ -176,19 +178,35 @@ const Profile = () => {
           <div className={`transition-all duration-1000 mb-6 sm:mb-8
             ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
             <div className="bg-black/40 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-4 sm:p-6">
-              <div className="flex items-center space-x-3 sm:space-x-4">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-r from-purple-600 to-blue-600
-                  flex items-center justify-center flex-shrink-0">
-                  <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+              <div className="flex items-center justify-between space-x-3 sm:space-x-4">
+                <div className="flex items-center space-x-3 sm:space-x-4">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-r from-purple-600 to-blue-600
+                    flex items-center justify-center flex-shrink-0">
+                    <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-bold mb-1 bg-gradient-to-r from-purple-400 to-blue-400
+                      bg-clip-text text-transparent">
+                      My Profile
+                    </h1>
+                    <p className="text-xs sm:text-sm text-gray-400 font-mono truncate">
+                      {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Not Connected'}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h1 className="text-xl sm:text-2xl font-bold mb-1 bg-gradient-to-r from-purple-400 to-blue-400
-                    bg-clip-text text-transparent">
-                    My Profile
-                  </h1>
-                  <p className="text-xs sm:text-sm text-gray-400 font-mono truncate">
-                    {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Not Connected'}
-                  </p>
+                {/* Currency Selector */}
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="w-5 h-5 text-green-400 hidden sm:block" />
+                  <select
+                    value={currency}
+                    onChange={(e) => changeCurrency(e.target.value)}
+                    className="px-3 py-2 rounded-lg bg-black/60 border border-purple-500/30 
+                      text-white text-sm focus:border-purple-500 focus:outline-none"
+                  >
+                    <option value="AVAX">AVAX</option>
+                    <option value="USDT">USDT</option>
+                    <option value="KSH">KSH</option>
+                  </select>
                 </div>
               </div>
             </div>

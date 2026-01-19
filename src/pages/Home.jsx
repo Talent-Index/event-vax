@@ -8,6 +8,7 @@ import Discover from './Discover';
 import Teams from './Teams';
 import { Link, useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
+import { useCurrency } from '../utils/currency.jsx';
 
 // Avalanche Network Configuration
 const AVALANCHE_MAINNET_PARAMS = {
@@ -90,6 +91,7 @@ const UltimateEventPlatform = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [activeStat, setActiveStat] = useState(null);
   const { walletAddress, isConnecting, connectWallet, isConnected } = useWallet();
+  const { convert, format } = useCurrency();
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
   const [activeEventFilter, setActiveEventFilter] = useState('all');
   const [events, setEvents] = useState([]);
@@ -396,7 +398,7 @@ const UltimateEventPlatform = () => {
                         </div>
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-sm font-semibold text-purple-400">
-                            {event.regular_price || event.vip_price || event.vvip_price || '0.0'} AVAX
+                            {format(event.regular_price || event.vip_price || event.vvip_price || '0.0')}
                           </span>
                         </div>
                         {event.venue && (

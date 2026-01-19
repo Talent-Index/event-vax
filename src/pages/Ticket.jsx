@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Wallet, Ticket as TicketIcon, Calendar, MapPin, User, QrCode, Download, AlertCircle, Loader, Eye, DollarSign, MessageSquare } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { CONTRACTS, NETWORK } from '../config/contracts';
+import { useCurrency } from '../utils/currency.jsx';
 
 const AVALANCHE_MAINNET_PARAMS = {
   chainId: '0xA86A',
@@ -17,6 +18,7 @@ const AVALANCHE_MAINNET_PARAMS = {
 
 const Ticket = () => {
   const { walletAddress, isConnecting, connectWallet, isConnected, networkId, EXPECTED_CHAIN_ID, switchToAvalanche } = useWallet();
+  const { format } = useCurrency();
   
   // UI States
   const [isVisible, setIsVisible] = useState(false);
@@ -58,7 +60,7 @@ const Ticket = () => {
           address: ticket.venue,
           ticketType: ['Regular', 'VIP', 'VVIP'][ticket.tier_id] || 'General',
           seatNumber: `${['REG', 'VIP', 'VVIP'][ticket.tier_id]}-${ticket.id}`,
-          price: `${ticket.quantity} ticket(s)`,
+          price: ticket.price || '0',
           qrCode: ticket.qr_code,
           status: ticket.verified ? 'Valid' : 'Pending',
           description: ticket.description || 'Event ticket',
@@ -376,7 +378,7 @@ const Ticket = () => {
                                     </div>
                                     <div>
                                       <span className="text-gray-400">Price:</span>
-                                      <span className="text-gray-300 ml-2">{selectedTicket.price}</span>
+                                      <span className="text-gray-300 ml-2">{selectedTicket.price ? format(selectedTicket.price) : 'N/A'}</span>
                                     </div>
                                     <div>
                                       <span className="text-gray-400">Status:</span>
