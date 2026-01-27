@@ -1,0 +1,13 @@
+lib/
+
+# Environment variables
+.env
+.env.local
+
+# Foundry build artifacts
+out/
+cache/
+broadcast/
+
+# Keep deployment records (optional)
+!broadcast/**/run-latest.json

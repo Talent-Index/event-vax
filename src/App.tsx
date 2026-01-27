@@ -19,6 +19,7 @@ import Teams from "./pages/Teams";
 import MintNFT from "./pages/MintNFT";
 import WaitlistPage from "./pages/WaitingList";
 import QuantumTicketResale from "./pages/QuantamTicketResale";
+
 const App = () => {
   return (
     <Router>

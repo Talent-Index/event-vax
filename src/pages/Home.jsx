@@ -6,8 +6,9 @@ import Testimonials from './Testimonials';
 import Discover from './Discover';
 // Footer is now handled elsewhere in the application
 import Teams from './Teams';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
+import { useCurrency } from '../utils/currency.jsx';
 
 // Avalanche Network Configuration
 const AVALANCHE_MAINNET_PARAMS = {
@@ -84,26 +85,13 @@ const AnimatedCard = ({ children, delay, onClick, isSelected }) => {
 };
 
 const UltimateEventPlatform = () => {
+  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [activeStat, setActiveStat] = useState(null);
   const { walletAddress, isConnecting, connectWallet, isConnected } = useWallet();
-  const [walletInitialized, setWalletInitialized] = useState(false);
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('Home component wallet state:', { isConnected, walletAddress, isConnecting });
-  }, [isConnected, walletAddress, isConnecting]);
-  
-  // Wait for wallet context to initialize
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setWalletInitialized(true);
-    }, 1000); // Give wallet context time to check existing connections
-    
-    return () => clearTimeout(timer);
-  }, []);
+  const { convert, format } = useCurrency();
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
   const [activeEventFilter, setActiveEventFilter] = useState('all');
   const [events, setEvents] = useState([]);
@@ -129,7 +117,18 @@ const UltimateEventPlatform = () => {
       const result = await response.json();
 
       if (result.success) {
-        setEvents(result.data);
+        const validEvents = result.data.filter(event => {
+          // Filter out corrupted events (generic names, no prices, "Blockchain Event" venue)
+          const isCorrupted = (
+            event.event_name?.startsWith('Event #') &&
+            event.venue === 'Blockchain Event' &&
+            (!event.regular_price || event.regular_price === '0' || event.regular_price === '0.0')
+          );
+          
+          return !isCorrupted;
+        });
+        
+        setEvents(validEvents);
       } else {
         console.error('Failed to fetch events:', result.error);
       }
@@ -138,6 +137,29 @@ const UltimateEventPlatform = () => {
     } finally {
       setIsLoadingEvents(false);
     }
+  };
+
+  const getFilteredEvents = () => {
+    const now = new Date();
+    
+    return events.filter(event => {
+      const eventDate = new Date(event.event_date);
+      const isPast = eventDate < now;
+      const isUpcoming = eventDate > now;
+      const isOngoing = Math.abs(eventDate - now) < 24 * 60 * 60 * 1000; // Within 24 hours
+      
+      switch (activeEventFilter) {
+        case 'upcoming':
+          return isUpcoming && !isOngoing;
+        case 'ongoing':
+          return isOngoing;
+        case 'past':
+          return isPast;
+        case 'all':
+        default:
+          return true;
+      }
+    });
   };
 
 
@@ -174,23 +196,11 @@ const UltimateEventPlatform = () => {
   };
 
   const handleProtectedNavigation = (path) => {
-    console.log('Navigation check:', { isConnected, walletAddress, walletInitialized });
-    
-    // If wallet context hasn't initialized yet, wait
-    if (!walletInitialized) {
-      console.log('Wallet not initialized yet, waiting...');
-      setTimeout(() => handleProtectedNavigation(path), 500);
-      return;
-    }
-    
     if (!isConnected || !walletAddress) {
-      console.log('Wallet not connected, showing sign in prompt');
       setShowSignInPrompt(true);
       return;
     }
-    
-    // console.log('Wallet connected, navigating to:', path);
-    window.location.href = path;
+    navigate(path);
   };
 
   return (
@@ -351,40 +361,8 @@ const UltimateEventPlatform = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {(events.length > 0 ? events : [
-                {
-                  id: 1,
-                  event_name: "Blockchain Summit 2025",
-                  event_date: "2025-03-15T10:00",
-                  regular_price: "0.5",
-                  venue: "Convention Center",
-                  flyer_image: "/src/assets/imag.png"
-                },
-                {
-                  id: 2,
-                  event_name: "Web3 Music Festival",
-                  event_date: "2025-04-20T18:00",
-                  regular_price: "1.2",
-                  venue: "Open Air Arena",
-                  flyer_image: "/src/assets/dr.png"
-                },
-                {
-                  id: 3,
-                  event_name: "NFT Art Exhibition",
-                  event_date: "2025-05-05T14:00",
-                  regular_price: "0.8",
-                  venue: "Art Gallery",
-                  flyer_image: "/src/assets/im.png"
-                },
-                {
-                  id: 4,
-                  event_name: "DeFi Conference",
-                  event_date: "2025-06-10T09:00",
-                  regular_price: "0.3",
-                  venue: "Tech Hub",
-                  flyer_image: "/src/assets/rb.png"
-                }
-              ]).map((event, index) => {
+              {getFilteredEvents().length > 0 ? (
+                getFilteredEvents().map((event, index) => {
                 const eventDate = new Date(event.event_date);
                 const formattedDate = eventDate.toLocaleDateString('en-US', {
                   month: 'long',
@@ -420,7 +398,7 @@ const UltimateEventPlatform = () => {
                         </div>
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-sm font-semibold text-purple-400">
-                            {event.regular_price || event.vip_price || event.vvip_price || '0.0'} AVAX
+                            {format(event.regular_price || event.vip_price || event.vvip_price || '0.0')}
                           </span>
                         </div>
                         {event.venue && (
@@ -432,7 +410,18 @@ const UltimateEventPlatform = () => {
                     </div>
                   </div>
                 );
-              })}
+              })) : (
+                <div className="col-span-full text-center py-20">
+                  <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400">No upcoming events available</p>
+                  <button
+                    onClick={() => handleProtectedNavigation('/Myevent')}
+                    className="mt-4 px-6 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors"
+                  >
+                    Create Your First Event
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

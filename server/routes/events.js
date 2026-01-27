@@ -1,9 +1,9 @@
 import express from 'express';
-import { insertEvent, getAllEvents, getEventById, updateEvent, deleteEvent } from '../utils/database.js';
+import { insertEvent, getAllEvents, getEventById, updateEvent, deleteEvent, getEventsByCreator } from '../utils/database.js';
 
 const router = express.Router();
 
-// Create new event
+// Create new event (NO IPFS - database only)
 router.post('/', async (req, res) => {
     try {
         const eventData = req.body;
@@ -16,16 +16,21 @@ router.post('/', async (req, res) => {
             });
         }
 
+        console.log('💾 Saving event to database (no IPFS for event posters)...');
+
+        // Save directly to database with base64 image
         const eventId = insertEvent(eventData);
+
+        const savedEvent = getEventById(eventId);
 
         res.status(201).json({
             success: true,
             message: 'Event created successfully',
             eventId: eventId,
-            data: getEventById(eventId)
+            data: savedEvent
         });
     } catch (error) {
-        console.error('Error creating event:', error);
+        console.error('❌ Error creating event:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to create event',
@@ -48,6 +53,25 @@ router.get('/', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to fetch events',
+            details: error.message
+        });
+    }
+});
+
+// Get events by creator wallet address
+router.get('/creator/:walletAddress', async (req, res) => {
+    try {
+        const events = getEventsByCreator(req.params.walletAddress);
+        res.json({
+            success: true,
+            count: events.length,
+            events: events
+        });
+    } catch (error) {
+        console.error('Error fetching creator events:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch creator events',
             details: error.message
         });
     }

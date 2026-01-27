@@ -48,7 +48,7 @@ Eventverse is a revolutionary blockchain-based ticketing platform engineered to 
 ![Web3.js](https://img.shields.io/badge/Web3.js-F16822?style=for-the-badge&logo=web3.js&logoColor=white)
 
 ### Development Tools
-![Hardhat](https://img.shields.io/badge/Hardhat-FFF100?style=for-the-badge&logo=hardhat&logoColor=black)
+![Foundry](https://img.shields.io/badge/Foundry-000000?style=for-the-badge&logo=ethereum&logoColor=white)
 ![OpenZeppelin](https://img.shields.io/badge/OpenZeppelin-4E5EE4?style=for-the-badge&logo=OpenZeppelin&logoColor=white)
 ![npm](https://img.shields.io/badge/npm-CB3837?style=for-the-badge&logo=npm&logoColor=white)
 
@@ -73,35 +73,72 @@ Eventverse is a revolutionary blockchain-based ticketing platform engineered to 
    ```
    Verify installation with: `node --version` and `npm --version`
 
-2. **Clone the repository:**
+2. **Install Core Wallet:**
+
+   Core is the recommended wallet for interacting with Avalanche and the EventVax platform.
+   
+   - **Download:** [https://core.app/](https://core.app/)
+   - **Browser Extension:** Available for Chrome, Firefox, Brave, and Edge
+   - **Mobile App:** Available on iOS and Android
+   
+   **Setup Steps:**
+   1. Install the Core browser extension or mobile app
+   2. Create a new wallet or import an existing one
+   3. Securely backup your recovery phrase
+   4. Switch to **Fuji Testnet** in network settings
+
+3. **Get Test AVAX (Fuji Faucet):**
+
+   You'll need test AVAX to interact with the platform on Fuji testnet.
+   
+   **Option 1: Official Avalanche Faucet**
+   - Visit: [https://build.avax.network/console/primary-network/faucet](https://build.avax.network/console/primary-network/faucet)
+   - Connect your Core wallet
+   - Select "Fuji (C-Chain)"
+   - Request test tokens (receive 0.5 AVAX)
+   
+   **Option 2: Core Faucet**
+   - Open Core wallet
+   - Navigate to the faucet section
+   - Request test AVAX directly from the wallet interface
+   
+   > 💡 **Note:** Faucet requests are limited to once per 24 hours per address
+
+4. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/mokayaj857/eventvax.git
+   git clone https://github.com/JosephOkumu/event-vax.git
 
    ```
 
-2. **Install dependencies:**
+5. **Install dependencies:**
 
    ```bash
    npm install
    ```
 
-3. **Compile smart contracts:**
+6. **Compile smart contracts:**
 
    ```bash
-   npx hardhat compile
+   cd contracts
+   forge build
    ```
 
-4. **Configure Avalanche network:**
-   Edit `hardhat.config.js` to include Avalanche network details under the `networks` section.
+7. **Configure Avalanche network:**
+   Create `.env` file in `contracts/` directory:
+   ```
+   PRIVATE_KEY=your_private_key
+   FUJI_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
+   SNOWTRACE_API_KEY=your_api_key
+   ```
 
-5. **Deploy contracts:**
+8. **Deploy contracts (Already deployed to Fuji):**
 
    ```bash
-   npx hardhat run scripts/deploy.js --network avalanche
+   forge script script/Deploy.s.sol --rpc-url $FUJI_RPC_URL --broadcast --verify
    ```
 
-6. **Run the application locally:**
+9. **Run the application locally:**
 
    ```bash
    # First, install and run the backend server
@@ -115,7 +152,7 @@ Eventverse is a revolutionary blockchain-based ticketing platform engineered to 
    npm run dev
    ```
 
-> 💡 Don't forget to update your contract address in the configuration files!
+> 💡 Contract addresses are configured in `src/config/contracts.js`
 
 ## 👥 The Team
 
@@ -188,7 +225,20 @@ Eventverse is a revolutionary blockchain-based ticketing platform engineered to 
 ### 🔗 Deployment Strategy
 
 - Our smart contracts are deployed on Avalanche's C-Chain to facilitate secure ticket operations.
-- Robust deployment pipeline via Hardhat ensures reliability.
+- Robust deployment pipeline via Foundry ensures reliability.
+
+### 📍 Live Contracts (Fuji Testnet)
+
+| Contract | Address |
+|----------|----------|
+| EventFactory | `0x53687CccF774FDa60fE2bd4720237fbb8e4fd02c` |
+| Marketplace | `0x5316aD9DB181111D7dA7AF4d139d223A1DdAB8E1` |
+| EventManager | `0x1651f730a846eD23411180eC71C9eFbFCD05A871` |
+| QR Verification | `0xd04E0B0959Ceb4f5Be7e29fc0d072368C1EC0e06` |
+
+**Explorer:** [View on Snowtrace](https://testnet.snowtrace.io/)
+
+**Deployment Details:** See [DEPLOYMENT.md](./docs/DEPLOYMENT.md)
 
 ## 🔮 Vision.
 

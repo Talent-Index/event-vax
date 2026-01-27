@@ -1,24 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Wallet, Ticket as TicketIcon, Calendar, MapPin, User, QrCode, Download, AlertCircle, Loader, Eye, DollarSign, MessageSquare } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
+import { CONTRACTS, NETWORK } from '../config/contracts';
+import { useCurrency } from '../utils/currency.jsx';
 
 const AVALANCHE_MAINNET_PARAMS = {
   chainId: '0xA86A',
-  chainName: 'Avalanche Mainnet C-Chain',
+  chainName: NETWORK.NAME,
   nativeCurrency: {
     name: 'Avalanche',
     symbol: 'AVAX',
     decimals: 18
   },
-  rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
-  blockExplorerUrls: ['https://snowtrace.io/']
+  rpcUrls: [NETWORK.RPC_URL],
+  blockExplorerUrls: [NETWORK.EXPLORER]
 };
 
-// Replace with your actual contract address and ABI
-const CONTRACT_ADDRESS = "0x256ff3b9d3df415a05ba42beb5f186c28e103b2a";
-
 const Ticket = () => {
-  const { walletAddress, isConnecting, connectWallet, isConnected } = useWallet();
+  const { walletAddress, isConnecting, connectWallet, isConnected, networkId, EXPECTED_CHAIN_ID, switchToAvalanche } = useWallet();
+  const { format } = useCurrency();
   
   // UI States
   const [isVisible, setIsVisible] = useState(false);
@@ -45,75 +45,45 @@ const Ticket = () => {
     try {
       setIsLoading(true);
       
-      // Check if user has minted tickets (stored in localStorage)
-      const mintedTickets = localStorage.getItem(`mintedTickets_${walletAddress}`);
-      const parsedMintedTickets = mintedTickets ? JSON.parse(mintedTickets) : [];
+      // Fetch tickets from backend
+      const response = await fetch(`http://localhost:8080/api/tickets/wallet/${walletAddress}`);
+      const result = await response.json();
 
-      // Mock images for tickets
-      const mockImages = [
-        "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop",
-        "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=400&h=300&fit=crop",
-        "https://images.unsplash.com/photo-1571263346811-c0a0c72c8ccb?w=400&h=300&fit=crop",
-        "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=300&fit=crop"
-      ];
+      if (result.success && result.tickets.length > 0) {
+        const formattedTickets = result.tickets.map((ticket, index) => ({
+          tokenId: ticket.id.toString(),
+          eventId: ticket.event_id,
+          eventName: ticket.event_name,
+          eventDate: new Date(ticket.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+          eventTime: new Date(ticket.event_date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+          venue: ticket.venue,
+          address: ticket.venue,
+          ticketType: ['Regular', 'VIP', 'VVIP'][ticket.tier_id] || 'General',
+          seatNumber: `${['REG', 'VIP', 'VVIP'][ticket.tier_id]}-${ticket.id}`,
+          price: ticket.price || '0',
+          qrCode: ticket.qr_code,
+          status: ticket.verified ? 'Valid' : 'Pending',
+          description: ticket.description || 'Event ticket',
+          image: ticket.flyer_image || `https://images.unsplash.com/photo-${1540575467063 + index}?w=400&h=300&fit=crop`,
+          mintDate: ticket.created_at,
+          owner: walletAddress,
+          quantity: ticket.quantity,
+          transactionHash: ticket.transaction_hash
+        }));
 
-      // Base tickets (always available for demo)
-      const demoTickets = [
-        {
-          tokenId: "1",
-          eventId: "event_1",
-          eventName: "EventVax Summit 2025",
-          eventDate: "March 15, 2025",
-          eventTime: "2:00 PM - 10:00 PM",
-          venue: "Convention Center, New York",
-          address: "123 Convention Ave, New York, NY 10001",
-          ticketType: "VIP Access",
-          seatNumber: "VIP-A12",
-          price: "0.08 AVAX",
-          qrCode: "QR123456789",
-          status: "Valid",
-          description: "Premium access to all VIP areas, networking sessions, and exclusive content.",
-          image: mockImages[0],
-          mintDate: "2024-12-15T10:30:00Z",
-          owner: walletAddress
-        },
-        {
-          tokenId: "2",
-          eventId: "event_2",
-          eventName: "Web3 Developer Conference",
-          eventDate: "April 22, 2025",
-          eventTime: "9:00 AM - 6:00 PM",
-          venue: "Tech Hub, San Francisco",
-          address: "456 Tech Street, San Francisco, CA 94102",
-          ticketType: "General Admission",
-          seatNumber: "GA-205",
-          price: "0.05 AVAX",
-          qrCode: "QR987654321",
-          status: "Valid",
-          description: "Access to all general sessions, workshops, and networking areas.",
-          image: mockImages[1],
-          mintDate: "2024-12-10T14:15:00Z",
-          owner: walletAddress
+        console.log('🔍 First ticket transaction hash:', formattedTickets[0]?.transactionHash);
+
+        setUserTickets(formattedTickets);
+        if (formattedTickets.length > 0 && !selectedTicket) {
+          setSelectedTicket(formattedTickets[0]);
         }
-      ];
-
-      // Add minted tickets to demo tickets
-      const allTickets = [...demoTickets, ...parsedMintedTickets.map((ticket, index) => ({
-        ...ticket,
-        tokenId: `minted_${index + 3}`,
-        image: mockImages[index % mockImages.length],
-        owner: walletAddress,
-        mintDate: ticket.mintDate || new Date().toISOString()
-      }))];
-
-      setUserTickets(allTickets);
-      if (allTickets.length > 0 && !selectedTicket) {
-        setSelectedTicket(allTickets[0]);
+      } else {
+        setUserTickets([]);
       }
-
     } catch (error) {
       console.error("Error fetching tickets:", error);
       setError("Failed to fetch your tickets. Please try again.");
+      setUserTickets([]);
     } finally {
       setIsLoading(false);
     }
@@ -126,6 +96,19 @@ const Ticket = () => {
     } catch (error) {
       console.error("Error connecting wallet:", error);
       setError(error.message || "Failed to connect wallet. Please try again.");
+    }
+  };
+
+  const handleViewOnExplorer = () => {
+    // Find the latest ticket data from userTickets array
+    const currentTicket = userTickets.find(t => t.tokenId === selectedTicket?.tokenId);
+    console.log('🔍 Current ticket from array:', currentTicket);
+    console.log('🔍 Transaction hash:', currentTicket?.transactionHash);
+    
+    if (currentTicket && currentTicket.transactionHash) {
+      window.open(`${NETWORK.EXPLORER}/tx/${currentTicket.transactionHash}`, '_blank');
+    } else {
+      alert('Transaction hash not available for this ticket');
     }
   };
 
@@ -233,6 +216,27 @@ const Ticket = () => {
                   <div className="relative z-10 flex items-center justify-center space-x-2">
                     {isConnecting ? <Loader className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
                     <span>{isConnecting ? "Connecting..." : "Connect Wallet"}</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          ) : networkId !== EXPECTED_CHAIN_ID ? (
+            <div className="text-center">
+              <div className="mb-8 p-6 sm:p-8 bg-red-900/20 backdrop-blur-xl rounded-2xl border border-red-500/30">
+                <AlertCircle className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-red-400" />
+                <h2 className="text-xl sm:text-2xl font-bold mb-4">Wrong Network</h2>
+                <p className="text-sm sm:text-base text-gray-400 mb-6 px-4">
+                  Please switch to Avalanche Fuji Testnet to view your tickets
+                </p>
+                <button
+                  onClick={switchToAvalanche}
+                  className="group relative px-6 py-3 rounded-xl overflow-hidden w-full sm:w-auto"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600
+                    group-hover:from-red-500 group-hover:to-orange-500 transition-colors duration-300" />
+                  <div className="relative z-10 flex items-center justify-center space-x-2">
+                    <AlertCircle className="w-5 h-5" />
+                    <span>Switch to Avalanche Fuji</span>
                   </div>
                 </button>
               </div>
@@ -374,7 +378,7 @@ const Ticket = () => {
                                     </div>
                                     <div>
                                       <span className="text-gray-400">Price:</span>
-                                      <span className="text-gray-300 ml-2">{selectedTicket.price}</span>
+                                      <span className="text-gray-300 ml-2">{selectedTicket.price ? format(selectedTicket.price) : 'N/A'}</span>
                                     </div>
                                     <div>
                                       <span className="text-gray-400">Status:</span>
@@ -448,7 +452,10 @@ const Ticket = () => {
                                   <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                   Resell Ticket
                                 </button>
-                                <button className="w-full bg-green-700 hover:bg-green-600 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-colors duration-300 flex items-center justify-center text-sm sm:text-base">
+                                <button
+                                  onClick={handleViewOnExplorer}
+                                  className="w-full bg-green-700 hover:bg-green-600 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl transition-colors duration-300 flex items-center justify-center text-sm sm:text-base"
+                                >
                                   <Eye className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                   View on Explorer
                                 </button>

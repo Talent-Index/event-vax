@@ -2,9 +2,88 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Ticket, Sparkles, Wallet, Plus, DollarSign, Users, Clock, Star, Zap } from "lucide-react";
+import { ethers } from 'ethers';
+import { useWallet } from '../contexts/WalletContext';
+import { EventFactoryABI, TicketNFTABI } from '../abi';
+import { CONTRACTS } from '../config/contracts';
+
+// PriceCard component - moved outside to prevent re-creation on every render
+const PriceCard = ({ tier, icon: Icon, price, color, features, handleInputChange, focusedField, setFocusedField }) => (
+  <div className={`relative overflow-hidden rounded-xl p-6 transition-all duration-500 hover:scale-105
+                  bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-lg
+                  border-2 ${color} hover:shadow-lg hover:shadow-${color}/20`}>
+    <div className={`absolute inset-0 bg-gradient-to-r ${color.replace('border', 'from')}/10 to-transparent
+                    opacity-0 hover:opacity-100 transition-opacity duration-500`} />
+
+    <div className="relative z-10">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-2">
+          <Icon className={`w-6 h-6 ${color.replace('border', 'text')}`} />
+          <h3 className="text-xl font-bold text-white">{tier}</h3>
+        </div>
+        {tier === "VVIP" && (
+          <Star className="w-5 h-5 text-yellow-400 animate-pulse" />
+        )}
+      </div>
+
+      <input
+        type="number"
+        name={`${tier.toLowerCase()}Price`}
+        value={price}
+        onChange={handleInputChange}
+        onFocus={() => setFocusedField(`${tier.toLowerCase()}Price`)}
+        onBlur={() => setFocusedField(null)}
+        placeholder="0.00"
+        className={`w-full bg-gray-800/50 border ${focusedField === `${tier.toLowerCase()}Price` ? color : 'border-gray-700'
+          } rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-all duration-300`}
+      />
+
+      <ul className="mt-4 space-y-2 text-sm text-gray-400">
+        {features.map((feature, idx) => (
+          <li key={idx} className="flex items-start">
+            <Zap className={`w-4 h-4 mr-2 mt-0.5 ${color.replace('border', 'text')}`} />
+            {feature}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+);
+
+PriceCard.propTypes = {
+  tier: PropTypes.string.isRequired,
+  icon: PropTypes.elementType.isRequired,
+  price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  color: PropTypes.string,
+  features: PropTypes.arrayOf(PropTypes.string),
+  handleInputChange: PropTypes.func.isRequired,
+  focusedField: PropTypes.string,
+  setFocusedField: PropTypes.func.isRequired
+};
+
+// FloatingParticle component - moved outside to prevent re-creation on every render
+const FloatingParticle = ({ delay = 0 }) => (
+  <div
+    className="absolute rounded-full animate-float"
+    style={{
+      backgroundColor: Math.random() > 0.5 ? "#9333EA" : "#3B82F6",
+      width: `${Math.random() * 3 + 2}px`,
+      height: `${Math.random() * 3 + 2}px`,
+      animation: `float 8s infinite ${delay}s ease-in-out`,
+      opacity: 0.6,
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+    }}
+  />
+);
+
+FloatingParticle.propTypes = {
+  delay: PropTypes.number
+};
 
 const QuantumEventCreator = () => {
   const navigate = useNavigate();
+  const { walletAddress, isConnected, connectWallet } = useWallet();
   const [isLoading, setIsLoading] = useState(true);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [formData, setFormData] = useState({
@@ -103,7 +182,99 @@ const QuantumEventCreator = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!isConnected) {
+      alert('Please connect your wallet first!');
+      await connectWallet();
+      return;
+    }
+
+    // ✅ Validate event date is in the future
+    const selectedDate = new Date(formData.eventDate);
+    const now = new Date();
+
+    if (selectedDate <= now) {
+      alert('❌ Event date must be in the future! Please select a date and time that hasn\'t passed yet.');
+      console.warn('⚠️ Event creation failed: Selected date is in the past');
+      return;
+    }
+
+    // Validate all required fields
+    if (!formData.eventName || !formData.venue) {
+      alert('❌ Please fill in all required fields (Event Name and Venue)');
+      return;
+    }
+
     try {
+      // Convert event date to Unix timestamp
+      const eventDate = Math.floor(selectedDate.getTime() / 1000);
+      const eventEndDate = eventDate + (24 * 60 * 60); // Add 24 hours
+
+      // Connect to blockchain
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACTS.EVENT_FACTORY, EventFactoryABI.abi, signer);
+
+      // Create event on blockchain
+      const tx = await contract.createEvent(
+        eventDate,
+        eventEndDate,
+        formData.eventName,
+        `ipfs://eventverse/${formData.eventName.replace(/\s+/g, '-').toLowerCase()}`,
+        {
+          gasLimit: 3000000,
+          maxFeePerGas: ethers.parseUnits("25", "gwei"),
+          maxPriorityFeePerGas: ethers.parseUnits("25", "gwei")
+        }
+      );
+
+      console.log('✅ Blockchain transaction submitted:', tx.hash);
+      const receipt = await tx.wait();
+      console.log('✅ Event created on blockchain!');
+
+      // Extract blockchain event ID from EventCreated event
+      let blockchainEventId = null;
+      for (const log of receipt.logs) {
+        try {
+          const parsed = contract.interface.parseLog({
+            topics: log.topics,
+            data: log.data
+          });
+          if (parsed.name === 'EventCreated') {
+            blockchainEventId = parsed.args.eventId.toString();
+            console.log('Blockchain Event ID:', blockchainEventId);
+            break;
+          }
+        } catch (e) {
+          continue;
+        }
+      }
+
+      if (!blockchainEventId) {
+        throw new Error('Failed to extract event ID from blockchain transaction');
+      }
+
+      // Create ticket tiers automatically
+      console.log('Creating ticket tiers...');
+      const ticketAddress = await contract.eventTicket(blockchainEventId);
+      const ticketContract = new ethers.Contract(ticketAddress, TicketNFTABI.abi, signer);
+
+      const tierTx = await ticketContract.createTiersBatch(
+        [0, 1, 2],
+        [100, 50, 20],
+        [
+          ethers.parseEther(formData.regularPrice || "0.01"),
+          ethers.parseEther(formData.vipPrice || "0.05"),
+          ethers.parseEther(formData.vvipPrice || "0.1")
+        ],
+        {
+          gasLimit: 3000000,
+          maxFeePerGas: ethers.parseUnits("25", "gwei"),
+          maxPriorityFeePerGas: ethers.parseUnits("25", "gwei")
+        }
+      );
+      await tierTx.wait();
+      console.log('✅ Ticket tiers created!');
+
       // Convert image to base64 if present
       let flyerImageBase64 = null;
       if (eventFlyer) {
@@ -125,19 +296,41 @@ const QuantumEventCreator = () => {
         vvipPrice: formData.vvipPrice,
         description: formData.description,
         flyerImage: flyerImageBase64,
-        creatorAddress: null // Will be set when wallet is connected
+        creatorAddress: walletAddress,
+        blockchainTxHash: tx.hash,
+        blockchainEventId: blockchainEventId
       };
 
       // Send to backend API
-      const response = await fetch('http://localhost:8080/api/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(eventData)
-      });
+      let response, result;
+      try {
+        response = await fetch('http://localhost:8080/api/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(eventData)
+        });
+        result = await response.json();
+      } catch (fetchError) {
+        console.warn('⚠️ Backend API unavailable - event created on blockchain but not saved to database');
+        alert(`✅ Event created on blockchain successfully!\n\n⚠️ Note: Backend server is not running, so event wasn\'t saved to database.\n\nBlockchain Event ID: ${blockchainEventId}\nTransaction: ${tx.hash}`);
 
-      const result = await response.json();
+        // Reset form even if backend failed
+        setFormData({
+          eventName: '',
+          eventDate: '',
+          venue: '',
+          regularPrice: '',
+          vipPrice: '',
+          vvipPrice: '',
+          description: ''
+        });
+        setEventFlyer(null);
+        setFlyerPreview(null);
+        setUploadError('');
+        return;
+      }
 
       if (result.success) {
         alert(`✅ Event created successfully! Event ID: ${result.eventId}`);
@@ -162,77 +355,52 @@ const QuantumEventCreator = () => {
           navigate('/');
         }, 1500);
       } else {
-        alert(`❌ Failed to create event: ${result.error}`);
+        alert(`❌ Failed to create event: ${result.error || 'Unknown error'}`);
         console.error('Error:', result);
       }
     } catch (error) {
-      console.error('Error creating event:', error);
-      alert('❌ Failed to create event. Please check console for details.');
+      // Check if user rejected the transaction
+      if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+        console.log('ℹ️ Transaction cancelled by user');
+        alert('Transaction cancelled. No changes were made.');
+        return;
+      }
+
+      // Check for specific smart contract errors
+      const errorMessage = error.message || error.toString();
+
+      // Event date in the past
+      if (errorMessage.includes('EventDateInPast') || error.data?.message?.includes('EventDateInPast')) {
+        console.error('❌ Event creation failed: Event date is in the past');
+        alert('❌ Event date must be in the future!\n\nPlease select a date and time that hasn\'t passed yet.');
+        return;
+      }
+
+      // Invalid event duration
+      if (errorMessage.includes('InvalidEventDuration')) {
+        console.error('❌ Event creation failed: Invalid event duration');
+        alert('❌ Invalid event duration!\n\nThe event end time must be after the start time.');
+        return;
+      }
+
+      // Contract is paused
+      if (errorMessage.includes('EnforcedPause')) {
+        console.error('❌ Event creation failed: Contract is paused');
+        alert('❌ Event creation is temporarily paused.\n\nPlease try again later.');
+        return;
+      }
+
+      // Transaction reverted (generic)
+      if (errorMessage.includes('transaction execution reverted') || error.code === 'CALL_EXCEPTION') {
+        console.error('❌ Transaction reverted:', error);
+        alert('❌ Transaction failed!\n\nThis could be due to:\n• Event date is in the past\n• Invalid event details\n• Network issues\n\nPlease check your inputs and try again.');
+        return;
+      }
+
+      // Handling other errors
+      console.error('❌ Error creating event:', error);
+      alert('❌ Failed to create event. Please check the console for details and try again.');
     }
-  };
-
-  const FloatingParticle = ({ delay = 0 }) => (
-    <div
-      className="absolute rounded-full animate-float"
-      style={{
-        backgroundColor: Math.random() > 0.5 ? "#9333EA" : "#3B82F6",
-        width: `${Math.random() * 3 + 2}px`,
-        height: `${Math.random() * 3 + 2}px`,
-        animation: `float 8s infinite ${delay}s ease-in-out`,
-        opacity: 0.6,
-        top: `${Math.random() * 100}%`,
-        left: `${Math.random() * 100}%`,
-      }}
-    />
-  );
-  const PriceCard = ({ tier, icon: Icon, price, color, features }) => (
-    <div className={`relative overflow-hidden rounded-xl p-6 transition-all duration-500 hover:scale-105
-                    bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-lg
-                    border-2 ${color} hover:shadow-lg hover:shadow-${color}/20`}>
-      <div className={`absolute inset-0 bg-gradient-to-r ${color.replace('border', 'from')}/10 to-transparent
-                      opacity-0 hover:opacity-100 transition-opacity duration-500`} />
-
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <Icon className={`w-6 h-6 ${color.replace('border', 'text')}`} />
-            <h3 className="text-xl font-bold text-white">{tier}</h3>
-          </div>
-          {tier === "VVIP" && (
-            <Star className="w-5 h-5 text-yellow-400 animate-pulse" />
-          )}
-        </div>
-
-        <input
-          type="number"
-          name={`${tier.toLowerCase()}Price`}
-          value={price}
-          onChange={handleInputChange}
-          onFocus={() => setFocusedField(`${tier}Price`)}
-          onBlur={() => setFocusedField(null)}
-          placeholder="0.00"
-          className={`w-full bg-gray-800/50 border ${focusedField === `${tier}Price` ? color : 'border-gray-700'
-            } rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-all duration-300`}
-        />
-
-        <ul className="mt-4 space-y-2 text-sm text-gray-400">
-          {features.map((feature, idx) => (
-            <li key={idx} className="flex items-start">
-              <Zap className={`w-4 h-4 mr-2 mt-0.5 ${color.replace('border', 'text')}`} />
-              {feature}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-
-  PriceCard.propTypes = {
-    tier: PropTypes.string.isRequired,
-    icon: PropTypes.elementType.isRequired,
-    price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    color: PropTypes.string,
-    features: PropTypes.arrayOf(PropTypes.string)
   };
 
   return (
@@ -355,6 +523,7 @@ const QuantumEventCreator = () => {
                   onChange={handleInputChange}
                   onFocus={() => setFocusedField('eventDate')}
                   onBlur={() => setFocusedField(null)}
+                  min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
                   className={`w-full bg-gray-800/50 border ${focusedField === 'eventDate' ? 'border-blue-500' : 'border-gray-700'
                     } rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-300`}
                   required
@@ -508,6 +677,9 @@ const QuantumEventCreator = () => {
                 price={formData.regularPrice}
                 color="border-green-500"
                 features={["Standard entry", "Event access", "Digital ticket"]}
+                handleInputChange={handleInputChange}
+                focusedField={focusedField}
+                setFocusedField={setFocusedField}
               />
               <PriceCard
                 tier="VIP"
@@ -515,6 +687,9 @@ const QuantumEventCreator = () => {
                 price={formData.vipPrice}
                 color="border-blue-500"
                 features={["Priority entry", "VIP lounge access", "Premium seating", "Meet & greet"]}
+                handleInputChange={handleInputChange}
+                focusedField={focusedField}
+                setFocusedField={setFocusedField}
               />
               <PriceCard
                 tier="VVIP"
@@ -522,6 +697,9 @@ const QuantumEventCreator = () => {
                 price={formData.vvipPrice}
                 color="border-yellow-500"
                 features={["Exclusive access", "Backstage pass", "Private area", "Gift package", "Photo opportunity"]}
+                handleInputChange={handleInputChange}
+                focusedField={focusedField}
+                setFocusedField={setFocusedField}
               />
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import Chatbit from './Chatbit';
+import { useCurrency } from '../utils/currency.jsx';
 
 import contractABI from "../../../../../../../src/abi/Ticket.json";    
 const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS; //<---add address here
@@ -9,6 +10,7 @@ const CreateEvent = () => {
   const [provider, setProvider] = useState(null);
   const [contract, setContract] = useState(null);
   const [account, setAccount] = useState('');
+  const { currency, toAVAX, format } = useCurrency();
   const [eventData, setEventData] = useState({
     name: '',
     date: '',
@@ -75,8 +77,9 @@ const CreateEvent = () => {
     }
 
     try {
-      // Convert price to wei
-      const priceInWei = ethers.parseEther(eventData.ticketPrice);
+      // Convert price to AVAX (wei) regardless of display currency
+      const priceInAVAX = toAVAX(eventData.ticketPrice);
+      const priceInWei = ethers.parseEther(priceInAVAX);
 
       // Connect to the provider and signer
       const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -159,7 +162,9 @@ const CreateEvent = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-gray-700 font-semibold mb-2" htmlFor="ticketPrice">Ticket Price (ETH)</label>
+          <label className="block text-gray-700 font-semibold mb-2" htmlFor="ticketPrice">
+            Ticket Price ({currency})
+          </label>
           <input
             type='number'
             name='ticketPrice'
@@ -167,7 +172,13 @@ const CreateEvent = () => {
             onChange={handleChange}
             required
             step={"0.001"}
+            placeholder={`Enter price in ${currency}`}
           />
+          {currency !== 'AVAX' && eventData.ticketPrice && (
+            <p className="text-xs text-gray-500 mt-1">
+              ≈ {toAVAX(eventData.ticketPrice)} AVAX
+            </p>
+          )}
         </div>
 
         <div className="mb-4">

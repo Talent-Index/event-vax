@@ -20,11 +20,6 @@ const Header = () => {
   const { walletAddress, isConnecting, connectWallet, disconnectWallet, isConnected } = useWallet();
   const [isVisible, setIsVisible] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('Header wallet state:', { walletAddress, isConnected, isConnecting });
-  }, [walletAddress, isConnected, isConnecting]);
 
   useEffect(() => {
     setIsVisible(true);
