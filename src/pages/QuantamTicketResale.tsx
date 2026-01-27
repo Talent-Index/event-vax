@@ -220,7 +220,11 @@ const QuantumTicketResale = () => {
       const signer = await provider.getSigner()
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
 
-      const tx = await contract.buyResaleTicket(tokenId, { value: price })
+      const tx = await contract.buyResaleTicket(tokenId, { 
+        value: price,
+        maxFeePerGas: ethers.parseUnits('25', 'gwei'),
+        maxPriorityFeePerGas: ethers.parseUnits('1', 'gwei')
+      })
       await tx.wait()
 
       await updateUserTickets()

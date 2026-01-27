@@ -20,11 +20,16 @@ import {
 } from 'lucide-react';
 import CommentRatingSection from '../components/CommentRatingSection';
 import { useWallet } from '../contexts/WalletContext';
+import { useCurrency } from '../utils/currency.jsx';
+import { ethers } from 'ethers';
+import { CONTRACTS } from '../config/contracts';
+import { EventFactoryABI, TicketNFTABI } from '../abi';
 
 const QuantumMintNFT = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const eventId = searchParams.get('eventId');
+  const { format, toAVAX, currency } = useCurrency();
   const fromTicketPage = searchParams.get('fromTicket') === 'true';
 
   const { walletAddress, isConnecting, connectWallet } = useWallet();
@@ -41,6 +46,7 @@ const QuantumMintNFT = () => {
   const [selectedTicketType, setSelectedTicketType] = useState('regular');
   const [showCommentsPreview, setShowCommentsPreview] = useState(false);
   const [hasTicketMinted, setHasTicketMinted] = useState(false);
+  const [ticketQuantity, setTicketQuantity] = useState(1);
 
   useEffect(() => {
     fetchEventData();
@@ -48,10 +54,8 @@ const QuantumMintNFT = () => {
   }, [eventId]);
 
   useEffect(() => {
-    if (walletAddress) {
+    if (walletAddress && currentStep < 2) {
       setCurrentStep(2);
-    } else {
-      setCurrentStep(1);
     }
   }, [walletAddress]);
 
@@ -132,7 +136,7 @@ const QuantumMintNFT = () => {
       attributes: [
         { trait_type: "Event", value: eventData.name },
         { trait_type: "Ticket Type", value: selected.label },
-        { trait_type: "Price", value: `${selected.price} AVAX` },
+        { trait_type: "Price", value: format(selected.price) },
         { trait_type: "Date", value: eventData.date },
         { trait_type: "Venue", value: eventData.venue }
       ]
@@ -157,7 +161,8 @@ const QuantumMintNFT = () => {
       await connectWallet();
       setCurrentStep(2);
     } catch (error) {
-      setError(error.message || 'Error connecting wallet');
+      console.error('❌ Wallet connection error:', error);
+      setError('Failed to connect wallet. Please try again.');
     }
   };
 
@@ -199,99 +204,141 @@ const QuantumMintNFT = () => {
   };
 
   const handleMintNFT = async () => {
-    if (!walletAddress) {
-      setError('Please connect your wallet first');
-      return;
-    }
+    if (!walletAddress) return;
 
-    if (!tokenURI.trim()) {
-      setError('Please generate ticket metadata first');
-      return;
-    }
-
-    setError(null);
     setIsLoading(true);
-    setMintingStatus('Initializing quantum minting process...');
-    setCurrentStep(4);
+    setMintingStatus('Preparing transaction...');
 
     try {
-      if (window.ethereum) {
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-        if (chainId !== '0xA86A') {
-          setMintingStatus('Please switch to Avalanche network...');
-          try {
-            await window.ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: '0xA86A' }],
-            });
-          } catch (switchError) {
-            if (switchError.code === 4902) {
-              await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                  chainId: '0xA86A',
-                  chainName: 'Avalanche Mainnet C-Chain',
-                  nativeCurrency: {
-                    name: 'Avalanche',
-                    symbol: 'AVAX',
-                    decimals: 18
-                  },
-                  rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
-                  blockExplorerUrls: ['https://snowtrace.io/']
-                }]
-              });
-            }
-          }
-        }
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      // Use stored blockchain_event_id
+      const blockchainEventId = eventData.rawData.blockchain_event_id;
+      
+      if (!blockchainEventId) {
+        throw new Error('This event was not properly created on the blockchain. Please contact the event organizer.');
       }
 
-      setMintingStatus('Please confirm the transaction in your wallet...');
+      setMintingStatus('Loading event contract...');
 
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Get ticket contract address
+      const factoryContract = new ethers.Contract(
+        CONTRACTS.EVENT_FACTORY, 
+        EventFactoryABI.abi, 
+        provider
+      );
+      
+      const ticketContractAddress = await factoryContract.eventTicket(blockchainEventId);
+      
+      if (ticketContractAddress === ethers.ZeroAddress) {
+        throw new Error('Event ticket contract not found on blockchain.');
+      }
 
-      const currentTicket = getCurrentTicketDetails();
-      const mintedTicket = {
-        eventId: eventId,
-        eventName: currentTicket.name,
-        eventDate: currentTicket.attributes.find(attr => attr.trait_type === "Date")?.value || eventData.date,
-        eventTime: "2:00 PM - 10:00 PM",
-        venue: currentTicket.attributes.find(attr => attr.trait_type === "Venue")?.value || eventData.venue,
-        address: "123 Convention Ave, New York, NY 10001",
-        ticketType: currentTicket.attributes.find(attr => attr.trait_type === "Ticket Type")?.value || "Regular",
-        seatNumber: `${selectedTicketType.toUpperCase()}-${Math.floor(Math.random() * 1000)}`,
-        price: currentTicket.attributes.find(attr => attr.trait_type === "Price")?.value || "0 AVAX",
-        qrCode: `QR${Math.random().toString(36).substring(2, 15)}`,
-        status: "Valid",
-        description: currentTicket.description,
-        mintDate: new Date().toISOString(),
-        tokenURI: tokenURI,
-        tokenId: `TICKET-${Date.now()}`
+      setMintingStatus('Preparing purchase...');
+
+      const ticketContract = new ethers.Contract(
+        ticketContractAddress, 
+        TicketNFTABI.abi, 
+        signer
+      );
+
+      // Map ticket types to tier IDs
+      const tierMap = { regular: 0, vip: 1, vvip: 2 };
+      const tierId = tierMap[selectedTicketType];
+
+      // Calculate total cost (convert to AVAX for blockchain)
+      const price = eventData.ticketPrices[selectedTicketType];
+      const priceInAVAX = toAVAX(price);
+      const totalCost = ethers.parseEther((parseFloat(priceInAVAX) * ticketQuantity).toString());
+
+      setMintingStatus(`Purchasing ${ticketQuantity} ticket(s)...`);
+
+      // Purchase tickets on blockchain
+      const tx = await ticketContract.purchaseTicket(tierId, ticketQuantity, {
+        value: totalCost,
+        maxFeePerGas: ethers.parseUnits('25', 'gwei'),
+        maxPriorityFeePerGas: ethers.parseUnits('1', 'gwei')
+      });
+
+      setMintingStatus('Waiting for blockchain confirmation...');
+      const receipt = await tx.wait();
+
+      setMintingStatus('Saving ticket to database...');
+
+      // Save to database with blockchain proof
+      const ticketData = {
+        eventId,
+        walletAddress,
+        ticketType: selectedTicketType,
+        quantity: ticketQuantity,
+        transactionHash: tx.hash,
+        blockNumber: receipt.blockNumber,
+        ticketContractAddress,
+        tierId,
+        blockchainEventId
       };
 
-      const existingTickets = localStorage.getItem(`mintedTickets_${walletAddress}`);
-      const tickets = existingTickets ? JSON.parse(existingTickets) : [];
-      tickets.push(mintedTicket);
-      localStorage.setItem(`mintedTickets_${walletAddress}`, JSON.stringify(tickets));
+      const backendResponse = await fetch('http://localhost:8080/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ticketData)
+      });
 
-      setMintingStatus('🎉 NFT Ticket Minted Successfully!');
-      setMintedTicketData(mintedTicket);
+      const backendResult = await backendResponse.json();
 
-      setTokenURI('');
-      localStorage.removeItem('pendingTicketMetadata');
+      // Set ticket data for success modal
+      setMintedTicketData({
+        eventName: eventData.name,
+        ticketType: selectedTicketType,
+        totalQuantity: ticketQuantity,
+        price: eventData.ticketPrices[selectedTicketType],
+        tokenId: tx.hash
+      });
 
-      setTimeout(() => {
+      if (!backendResponse.ok || !backendResult.success) {
+        console.warn('Backend save failed:', backendResult);
+        setMintingStatus('⚠️ Tickets purchased on blockchain but database save failed');
+        // Still show success since blockchain transaction succeeded
+        setTimeout(() => {
+          setMintingStatus(`🎉 ${ticketQuantity} Ticket(s) Purchased!`);
+          setShowSuccessModal(true);
+        }, 2000);
+      } else {
+        console.log('✅ Ticket saved to database:', backendResult);
+        setMintingStatus(`🎉 ${ticketQuantity} Ticket(s) Purchased!`);
         setShowSuccessModal(true);
-      }, 1000);
+      }
 
     } catch (error) {
-      console.error('Error minting NFT:', error);
-      setError(error.message || 'Error minting NFT. Please try again.');
+      console.error('❌ Minting error details:', error);
+      
+      if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+        setMintingStatus(null);
+        setError('Transaction cancelled by user');
+        return;
+      }
+      
+      // User-friendly error messages
+      let userMessage = 'Failed to purchase tickets';
+      
+      if (error.code === 'INSUFFICIENT_FUNDS') {
+        userMessage = 'Insufficient AVAX balance. Please add funds to your wallet.';
+      } else if (error.message?.includes('insufficient funds')) {
+        userMessage = 'Insufficient AVAX balance. Please add funds to your wallet.';
+      } else if (error.message?.includes('user rejected')) {
+        userMessage = 'Transaction cancelled by user';
+      } else if (error.message?.includes('network')) {
+        userMessage = 'Network error. Please check your connection.';
+      }
+      
+      setError(userMessage);
       setMintingStatus(null);
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   const handleViewTickets = () => {
     setShowSuccessModal(false);
     window.location.href = '/ticket';
@@ -376,9 +423,9 @@ const QuantumMintNFT = () => {
             {[
               { num: 1, label: 'Connect', icon: Wallet },
               { num: 2, label: 'Preview', icon: Eye },
-              { num: 3, label: 'Generate', icon: Zap },
-              { num: 4, label: 'Mint', icon: Ticket },
-              { num: 5, label: 'Comments', icon: MessageSquare }
+              // { num: 3, label: 'Generate', icon: Zap },
+              { num: 3, label: 'Mint', icon: Ticket },
+              { num: 4, label: 'Comments', icon: MessageSquare }
             ].map(({ num, label, icon: Icon }) => (
               <div key={num} className="flex flex-col items-center flex-1">
                 <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-500
@@ -485,7 +532,7 @@ const QuantumMintNFT = () => {
                           <h4 className="text-base sm:text-lg font-bold text-white">Regular</h4>
                         </div>
                         <p className="text-xl sm:text-2xl font-bold text-green-400 mb-1 sm:mb-2">
-                          {eventData.ticketPrices.regular} AVAX
+                          {format(eventData.ticketPrices.regular)}
                         </p>
                         <p className="text-xs sm:text-sm text-gray-400">Standard event access</p>
                       </button>
@@ -508,7 +555,7 @@ const QuantumMintNFT = () => {
                           <h4 className="text-base sm:text-lg font-bold text-white">VIP</h4>
                         </div>
                         <p className="text-xl sm:text-2xl font-bold text-blue-400 mb-1 sm:mb-2">
-                          {eventData.ticketPrices.vip} AVAX
+                          {format(eventData.ticketPrices.vip)}
                         </p>
                         <p className="text-xs sm:text-sm text-gray-400">Premium access & perks</p>
                       </button>
@@ -531,10 +578,68 @@ const QuantumMintNFT = () => {
                           <h4 className="text-base sm:text-lg font-bold text-white">VVIP</h4>
                         </div>
                         <p className="text-xl sm:text-2xl font-bold text-purple-400 mb-1 sm:mb-2">
-                          {eventData.ticketPrices.vvip} AVAX
+                          {format(eventData.ticketPrices.vvip)}
                         </p>
                         <p className="text-xs sm:text-sm text-gray-400">Exclusive VIP experience</p>
                       </button>
+                    </div>
+                  </div>
+
+                  {/* Ticket Quantity Selection */}
+                  <div className="mb-6 sm:mb-8">
+                    <div className="flex items-center mb-3 sm:mb-4">
+                      <Ticket className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-purple-400" />
+                      <h3 className="text-xl sm:text-2xl font-bold">Number of Tickets</h3>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl p-4 sm:p-6 border border-gray-700/50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <label htmlFor="quantity" className="block text-sm text-gray-400 mb-2">
+                            Select quantity (1-10)
+                          </label>
+                          <div className="flex items-center space-x-4">
+                            <button
+                              onClick={() => setTicketQuantity(Math.max(1, ticketQuantity - 1))}
+                              className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gray-700 hover:bg-gray-600 border border-gray-600
+                                       flex items-center justify-center transition-all duration-200 hover:scale-110"
+                              disabled={ticketQuantity <= 1}
+                            >
+                              <span className="text-xl font-bold text-white">-</span>
+                            </button>
+
+                            <input
+                              type="number"
+                              id="quantity"
+                              min="1"
+                              max="10"
+                              value={ticketQuantity}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 1;
+                                setTicketQuantity(Math.min(10, Math.max(1, value)));
+                              }}
+                              className="w-20 sm:w-24 text-center text-2xl sm:text-3xl font-bold bg-gray-700/50 border-2 border-purple-500/50
+                                       rounded-lg px-3 py-2 text-white focus:outline-none focus:border-purple-500 transition-all"
+                            />
+
+                            <button
+                              onClick={() => setTicketQuantity(Math.min(10, ticketQuantity + 1))}
+                              className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gray-700 hover:bg-gray-600 border border-gray-600
+                                       flex items-center justify-center transition-all duration-200 hover:scale-110"
+                              disabled={ticketQuantity >= 10}
+                            >
+                              <span className="text-xl font-bold text-white">+</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="ml-6 text-right">
+                          <p className="text-sm text-gray-400 mb-1">Total Price</p>
+                          <p className="text-2xl sm:text-3xl font-bold text-purple-400">
+                            {format((parseFloat(eventData.ticketPrices[selectedTicketType]) * ticketQuantity).toFixed(4))}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -601,7 +706,7 @@ const QuantumMintNFT = () => {
 
                   {/* Action Buttons */}
                   <div className="space-y-3 sm:space-y-4">
-                    <button
+                    {/* <button
                       onClick={generateTokenURI}
                       disabled={isLoading || !walletAddress}
                       className="w-full group relative px-4 sm:px-6 py-3 sm:py-4 rounded-xl overflow-hidden transition-all duration-300 hover:scale-105"
@@ -616,25 +721,35 @@ const QuantumMintNFT = () => {
                         )}
                         <span className="font-semibold text-sm sm:text-base">Generate Ticket Metadata</span>
                       </div>
-                    </button>
+                    </button> */}
 
                     <button
                       onClick={handleMintNFT}
-                      disabled={isLoading || !walletAddress || !tokenURI}
-                      className={`w-full group relative px-4 sm:px-6 py-3 sm:py-4 rounded-xl overflow-hidden transition-all duration-300 
-                           ${tokenURI ? 'hover:scale-105' : 'opacity-50 cursor-not-allowed'}`}
+                      disabled={isLoading}
+                      className={`w-full group relative px-4 sm:px-6 py-3 sm:py-4 rounded-xl overflow-hidden transition-all duration-300
+                        ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 animate-gradient-x" />
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                         style={{ background: 'linear-gradient(45deg, rgba(168,85,247,0.4) 0%, rgba(147,51,234,0.4) 100%)' }} />
-                      <div className="relative z-10 flex items-center justify-center space-x-2">
+                      <div className="relative z-10 flex flex-col items-center justify-center space-y-1">
                         {isLoading && currentStep === 4 ? (
-                          <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span className="text-xs">Processing...</span>
+                          </>
                         ) : (
                           <>
-                            <Ticket className="w-4 h-4 sm:w-5 sm:h-5" />
-                            <span className="font-bold text-sm sm:text-base">Mint NFT Ticket</span>
-                            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
+                            <div className="flex items-center space-x-2">
+                              <Ticket className="w-4 h-4 sm:w-5 sm:h-5" />
+                              <span className="font-bold text-sm sm:text-base">
+                                Buy {ticketQuantity > 1 ? `${ticketQuantity} Tickets` : 'Ticket'}
+                              </span>
+                              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
+                            </div>
+                            <span className="text-xs text-purple-200">
+                              Total: {format((parseFloat(eventData.ticketPrices[selectedTicketType]) * ticketQuantity).toFixed(4))}
+                            </span>
                           </>
                         )}
                       </div>
@@ -743,7 +858,11 @@ const QuantumMintNFT = () => {
                 <CheckCircle className="w-10 h-10 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-white mb-2">Success!</h3>
-              <p className="text-gray-300">Your quantum ticket has been minted</p>
+              <p className="text-gray-300">
+                {mintedTicketData.totalQuantity > 1
+                  ? `${mintedTicketData.totalQuantity} quantum tickets have been minted`
+                  : 'Your quantum ticket has been minted'}
+              </p>
             </div>
 
             {/* Ticket Details */}
@@ -764,13 +883,30 @@ const QuantumMintNFT = () => {
                       {mintedTicketData.ticketType}
                     </span>
                   </div>
+                  {mintedTicketData.totalQuantity > 1 ? (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Quantity:</span>
+                      <span className="text-white font-bold text-lg">{mintedTicketData.totalQuantity} Tickets</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Seat:</span>
+                      <span className="text-white font-mono">{mintedTicketData.seatNumber}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Seat:</span>
-                    <span className="text-white font-mono">{mintedTicketData.seatNumber}</span>
+                    <span className="text-gray-400">Total Price:</span>
+                    <span className="text-purple-400 font-bold">
+                      {format((parseFloat(mintedTicketData.price) * (mintedTicketData.totalQuantity || 1)).toFixed(4))}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Token ID:</span>
-                    <span className="text-green-400 font-mono text-xs">{mintedTicketData.tokenId}</span>
+                    <span className="text-gray-400">Token ID{mintedTicketData.totalQuantity > 1 ? 's' : ''}:</span>
+                    <span className="text-green-400 font-mono text-xs">
+                      {mintedTicketData.totalQuantity > 1
+                        ? `${mintedTicketData.totalQuantity} tickets minted`
+                        : mintedTicketData.tokenId}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center pt-3 border-t border-gray-700">
                     <span className="text-gray-400">Status:</span>

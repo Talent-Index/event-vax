@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, Trophy, Ticket, Award, Calendar, ChevronDown, ChevronUp, 
-  Star, Zap, Target, Gift, ExternalLink, Eye, BarChart3 
+  Star, Zap, Target, Gift, ExternalLink, Eye, BarChart3, DollarSign 
 } from 'lucide-react';
+import { useAchievements } from '../hooks/useAchievements';
+import { useCurrency } from '../utils/currency.jsx';
 
 const Profile = () => {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
+  const [userTickets, setUserTickets] = useState([]);
+  const [userEvents, setUserEvents] = useState([]);
+  const { achievements, poaps, loading: achievementsLoading } = useAchievements(walletAddress);
+  const { currency, changeCurrency } = useCurrency();
   const [expandedSections, setExpandedSections] = useState({
     achievements: false,
     tickets: false,
@@ -20,6 +26,63 @@ const Profile = () => {
     setIsVisible(true);
     checkWalletConnection();
   }, []);
+
+  useEffect(() => {
+    if (walletAddress) {
+      fetchUserTickets();
+      fetchUserEvents();
+    }
+  }, [walletAddress]);
+
+  const fetchUserTickets = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/tickets/wallet/${walletAddress}`);
+      const result = await response.json();
+
+      if (result.success && result.tickets.length > 0) {
+        const formattedTickets = result.tickets.map((ticket) => ({
+          id: ticket.id,
+          eventName: ticket.event_name,
+          date: new Date(ticket.event_date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+          status: 'Active',
+          type: ['Regular', 'VIP', 'VVIP'][ticket.tier_id] || 'General'
+        }));
+        setUserTickets(formattedTickets);
+      }
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+    }
+  };
+
+  const fetchUserEvents = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/events/creator/${walletAddress}`);
+      const result = await response.json();
+
+      if (result.success && result.events.length > 0) {
+        // Filter out corrupted events
+        const validEvents = result.events.filter(event => {
+          const isCorrupted = (
+            event.event_name?.startsWith('Event #') &&
+            event.venue === 'Blockchain Event' &&
+            (!event.regular_price || event.regular_price === '0' || event.regular_price === '0.0')
+          );
+          return !isCorrupted;
+        });
+
+        const formattedEvents = validEvents.map((event) => ({
+          id: event.blockchain_event_id || event.id,
+          name: event.event_name,
+          date: new Date(event.event_date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+          attendees: event.attendees || 0,
+          status: new Date(event.event_date) > new Date() ? 'Upcoming' : 'Completed'
+        }));
+        setUserEvents(formattedEvents);
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    }
+  };
 
   const checkWalletConnection = async () => {
     if (typeof window.ethereum !== "undefined") {
@@ -46,27 +109,20 @@ const Profile = () => {
     }));
   };
 
-  // Dummy data for demonstration
+  // Map icon names to components
+  const iconMap = {
+    Star, Zap, Target, Award, Gift
+  };
+
+  // User data with real achievements
   const userData = {
-    achievements: [
-      { id: 1, title: 'Early Adopter', description: 'Joined EventVerse in 2024', icon: Star, color: 'purple' },
-      { id: 2, title: 'Event Creator', description: 'Created 5+ events', icon: Zap, color: 'blue' },
-      { id: 3, title: 'Super Attendee', description: 'Attended 10+ events', icon: Target, color: 'green' }
-    ],
-    tickets: [
-      { id: 1, eventName: 'Blockchain Summit 2025', date: '2025-03-15', status: 'Active', type: 'VIP' },
-      { id: 2, eventName: 'Web3 Music Festival', date: '2025-04-20', status: 'Active', type: 'Regular' },
-      { id: 3, eventName: 'NFT Art Exhibition', date: '2025-05-05', status: 'Upcoming', type: 'VVIP' }
-    ],
-    poaps: [
-      { id: 1, name: 'EventVerse Pioneer', event: 'Launch Event', date: '2024-12-01' },
-      { id: 2, name: 'Community Builder', event: 'Community Meetup', date: '2025-01-15' }
-    ],
-    events: [
-      { id: 1, name: 'Tech Conference 2025', date: '2025-06-10', attendees: 150, status: 'Upcoming' },
-      { id: 2, name: 'Crypto Meetup', date: '2025-07-22', attendees: 75, status: 'Upcoming' },
-      { id: 3, name: 'Web3 Workshop', date: '2024-12-15', attendees: 50, status: 'Completed' }
-    ]
+    achievements: achievements.map(ach => ({
+      ...ach,
+      icon: iconMap[ach.icon] || Star
+    })),
+    tickets: userTickets.length > 0 ? userTickets : [],
+    poaps: poaps.length > 0 ? poaps : [],
+    events: userEvents.length > 0 ? userEvents : []
   };
 
   const SectionHeader = ({ title, icon: Icon, isExpanded, onClick, count }) => (
@@ -122,19 +178,35 @@ const Profile = () => {
           <div className={`transition-all duration-1000 mb-6 sm:mb-8
             ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
             <div className="bg-black/40 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-4 sm:p-6">
-              <div className="flex items-center space-x-3 sm:space-x-4">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-r from-purple-600 to-blue-600
-                  flex items-center justify-center flex-shrink-0">
-                  <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+              <div className="flex items-center justify-between space-x-3 sm:space-x-4">
+                <div className="flex items-center space-x-3 sm:space-x-4">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-r from-purple-600 to-blue-600
+                    flex items-center justify-center flex-shrink-0">
+                    <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-bold mb-1 bg-gradient-to-r from-purple-400 to-blue-400
+                      bg-clip-text text-transparent">
+                      My Profile
+                    </h1>
+                    <p className="text-xs sm:text-sm text-gray-400 font-mono truncate">
+                      {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Not Connected'}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h1 className="text-xl sm:text-2xl font-bold mb-1 bg-gradient-to-r from-purple-400 to-blue-400
-                    bg-clip-text text-transparent">
-                    My Profile
-                  </h1>
-                  <p className="text-xs sm:text-sm text-gray-400 font-mono truncate">
-                    {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Not Connected'}
-                  </p>
+                {/* Currency Selector */}
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="w-5 h-5 text-green-400 hidden sm:block" />
+                  <select
+                    value={currency}
+                    onChange={(e) => changeCurrency(e.target.value)}
+                    className="px-3 py-2 rounded-lg bg-black/60 border border-purple-500/30 
+                      text-white text-sm focus:border-purple-500 focus:outline-none"
+                  >
+                    <option value="AVAX">AVAX</option>
+                    <option value="USDT">USDT</option>
+                    <option value="KSH">KSH</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -246,27 +318,43 @@ const Profile = () => {
             {expandedSections.poaps && (
               <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-black/20 backdrop-blur-xl
                 rounded-lg border border-purple-500/20">
-                {userData.poaps.map((poap, index) => (
-                  <div
-                    key={poap.id}
-                    className="group p-4 bg-black/40 backdrop-blur-xl rounded-lg border
-                      border-purple-500/30 hover:border-purple-500/50 transition-all duration-300
-                      hover:scale-105"
-                    style={{ transitionDelay: `${index * 50}ms` }}
-                  >
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-blue-600
-                        flex items-center justify-center">
-                        <Gift className="w-6 h-6 text-white" />
+                {achievementsLoading ? (
+                  <div className="col-span-full text-center py-8 text-gray-400">
+                    Loading POAPs from blockchain...
+                  </div>
+                ) : userData.poaps.length > 0 ? (
+                  userData.poaps.map((poap, index) => (
+                    <div
+                      key={poap.id}
+                      className="group p-4 bg-black/40 backdrop-blur-xl rounded-lg border
+                        border-purple-500/30 hover:border-purple-500/50 transition-all duration-300
+                        hover:scale-105"
+                      style={{ transitionDelay: `${index * 50}ms` }}
+                    >
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-blue-600
+                          flex items-center justify-center">
+                          <Gift className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-white">{poap.name}</h4>
+                          <p className="text-xs text-gray-400">{poap.event}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-sm font-semibold text-white">{poap.name}</h4>
-                        <p className="text-xs text-gray-400">{poap.event}</p>
+                      <p className="text-xs text-gray-500">Token ID: #{poap.tokenId}</p>
+                      <div className="mt-2 flex items-center space-x-1">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-xs text-green-400">On-Chain Verified</span>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500">Collected: {poap.date}</p>
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8 text-gray-400">
+                    <Gift className="w-12 h-12 mx-auto mb-2 text-gray-600" />
+                    <p>No POAPs collected yet</p>
+                    <p className="text-xs mt-1">Attend events to earn POAPs!</p>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>

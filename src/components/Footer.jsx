@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Mail, 
   Twitter, 
@@ -14,9 +15,28 @@ import {
 
 // This footer is now an exact copy of the landing page's footer markup
 const AnimatedFooter = () => {
+  const navigate = useNavigate();
   const [hoveredIcon, setHoveredIcon] = useState(null);
   const [hoveredLink, setHoveredLink] = useState(null);
   const [isNewsletterFocused, setIsNewsletterFocused] = useState(false);
+
+  const quickLinks = [
+    { name: 'Events', action: 'scroll' },
+    { name: 'Create Event', path: '/Myevent' },
+    { name: 'My Tickets', path: '/ticket' },
+    { name: 'Profile', path: '/profile' }
+  ];
+
+  const handleLinkClick = (item) => {
+    if (item.action === 'scroll') {
+      navigate('/');
+      setTimeout(() => {
+        document.getElementById('events-section')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      navigate(item.path);
+    }
+  };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -83,20 +103,20 @@ const AnimatedFooter = () => {
           <div>
             <h3 className="text-sm font-semibold text-white mb-3">Quick Links</h3>
             <ul className="space-y-2">
-              {['About Us', 'Events', 'Pricing', 'Contact'].map((item, index) => (
+              {quickLinks.map((item, index) => (
                 <li key={index}>
-                  <a
-                    href="#"
+                  <button
+                    onClick={() => handleLinkClick(item)}
                     className="group relative text-xs text-gray-400 hover:text-white transition-colors"
                     onMouseEnter={() => setHoveredLink(index)}
                     onMouseLeave={() => setHoveredLink(null)}
                   >
                     <span className="relative">
-                      {item}
+                      {item.name}
                       <span className="absolute left-0 bottom-0 w-0 h-px bg-gradient-to-r from-purple-500 to-blue-500 
                         group-hover:w-full transition-all duration-300" />
                     </span>
-                  </a>
+                  </button>
                 </li>
               ))}
             </ul>

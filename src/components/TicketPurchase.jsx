@@ -1,8 +1,8 @@
-//Initial blocks of Code commented at the bottom
-
 import React, { useState } from "react";
 import { ethers } from "ethers";
 import { useWallet } from '../contexts/WalletContext';
+import { MarketplaceABI } from '../abi';
+import { CONTRACTS } from '../config/contracts';
 
 export default function TicketPurchase() {
   const { walletAddress, isConnecting, connectWallet, isConnected } = useWallet();
@@ -30,15 +30,17 @@ export default function TicketPurchase() {
       return;
     }
 
-    const totalCost = ethers.utils.parseEther((quantity * pricePerTicket).toString());
+    const totalCost = ethers.parseEther((quantity * pricePerTicket).toString());
 
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
 
       const tx = await signer.sendTransaction({
-        to: "0x256ff3b9d3df415a05ba42beb5f186c28e103b2a", // Replace with your smart contract address
+        to: CONTRACTS.MARKETPLACE,
         value: totalCost,
+        maxFeePerGas: ethers.parseUnits('25', 'gwei'),
+        maxPriorityFeePerGas: ethers.parseUnits('1', 'gwei')
       });
 
       await tx.wait(); // Wait for the transaction to be mined

@@ -3,32 +3,9 @@ import QRCode from 'react-qr-code';
 import { ethers } from 'ethers';
 import Chatbit from './Chatbit';
 import { Shield, CheckCircle, XCircle, RefreshCw, Ticket, Lock, Scan, Globe, AlertTriangle } from 'lucide-react';
+import { QRVerificationABI } from '../abi';
+import { CONTRACTS, NETWORK } from '../config/contracts';
 
-// Minimal ABI for ticket verification contract
-const MINIMAL_ABI = [
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "ticketId",
-        "type": "string"
-      }
-    ],
-    "name": "verifyTicket",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
-];
-
-// Avalanche Mainnet Contract Address
-const CONTRACT_ADDRESS = '0x256ff3b9d3df415a05ba42beb5f186c28e103b2a';
 
 const QRVerificationSystem = () => {
   // State Management
@@ -68,17 +45,17 @@ const QRVerificationSystem = () => {
       throw new Error('MetaMask is not installed');
     }
 
-    const avalancheChainId = '0xA86A';
+    const avalancheChainId = `0x${NETWORK.CHAIN_ID.toString(16)}`;
     const avalancheParams = {
       chainId: avalancheChainId,
-      chainName: 'Avalanche Network',
+      chainName: NETWORK.NAME,
       nativeCurrency: {
         name: 'AVAX',
         symbol: 'AVAX',
         decimals: 18
       },
-      rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
-      blockExplorerUrls: ['https://snowtrace.io/']
+      rpcUrls: [NETWORK.RPC_URL],
+      blockExplorerUrls: [NETWORK.EXPLORER]
     };
 
     try {
@@ -172,13 +149,13 @@ const QRVerificationSystem = () => {
       const signer = await provider.getSigner();
       
       const network = await provider.getNetwork();
-      if (network.chainId !== 43114n) {
+      if (network.chainId !== BigInt(NETWORK.CHAIN_ID)) {
         throw new Error('Not connected to Avalanche C-Chain');
       }
 
       const ticketContract = new ethers.Contract(
-        CONTRACT_ADDRESS,
-        MINIMAL_ABI,
+        CONTRACTS.QR_VERIFICATION,
+        QRVerificationABI.abi,
         signer
       );
 

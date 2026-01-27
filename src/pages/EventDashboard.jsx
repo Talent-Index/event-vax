@@ -4,65 +4,50 @@ import {
   Calendar, Users, CheckCircle, MessageSquare, BarChart3, 
   TrendingUp, Eye, UserCheck, Clock, MapPin, Ticket, X
 } from 'lucide-react';
+import { useEventData } from '../hooks/useEventData';
+import { useWallet } from '../contexts/WalletContext';
 
 const EventDashboard = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const { walletAddress, isConnected } = useWallet();
+  const { eventData, tickets, loading, error } = useEventData(eventId);
   const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
-  const [walletAddress, setWalletAddress] = useState('');
+  const [allGuests, setAllGuests] = useState([]);
 
   useEffect(() => {
     setIsVisible(true);
-    checkWalletConnection();
-  }, []);
+    if (!isConnected) navigate('/');
+  }, [isConnected]);
 
-  const checkWalletConnection = async () => {
-    if (typeof window.ethereum !== "undefined") {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          setWalletAddress(accounts[0]);
-        } else {
-          navigate('/');
-        }
-      } catch (error) {
-        console.error("Error checking wallet connection:", error);
-        navigate('/');
-      }
-    } else {
-      navigate('/');
-    }
-  };
-
-  // Dummy event data
-  const eventData = {
-    id: eventId,
-    name: 'Tech Conference 2025',
-    date: '2025-06-10',
-    venue: 'Convention Center, Downtown',
-    description: 'A premier technology conference bringing together industry leaders and innovators.',
-    totalTickets: 200,
-    soldTickets: 150,
-    revenue: '45.5 AVAX',
-    status: 'Upcoming'
-  };
-
-  // Dummy guests data
-  const [allGuests, setAllGuests] = useState([
-    { id: 1, name: 'Alice Johnson', wallet: '0x1234...5678', ticketType: 'VIP', checkedIn: false },
-    { id: 2, name: 'Bob Smith', wallet: '0x8765...4321', ticketType: 'Regular', checkedIn: false },
-    { id: 3, name: 'Carol White', wallet: '0xabcd...efgh', ticketType: 'VVIP', checkedIn: false },
-    { id: 4, name: 'David Brown', wallet: '0x9876...1234', ticketType: 'VIP', checkedIn: false },
-    { id: 5, name: 'Eve Davis', wallet: '0x5432...8765', ticketType: 'Regular', checkedIn: false }
-  ]);
-
-  const [comments, setComments] = useState([
-    { id: 1, user: 'Alice Johnson', comment: 'Looking forward to this event!', time: '2 hours ago' },
-    { id: 2, user: 'Bob Smith', comment: 'Will there be parking available?', time: '5 hours ago' }
-  ]);
+  useEffect(() => {
+    if (tickets.length > 0) setAllGuests(tickets);
+  }, [tickets]);
 
   const checkedInGuests = allGuests.filter(guest => guest.checkedIn);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading event data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !eventData) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-400 mb-4">Error loading event: {error || 'Event not found'}</p>
+          <button onClick={() => navigate('/profile')} className="px-4 py-2 bg-purple-600 rounded-lg">Back to Profile</button>
+        </div>
+      </div>
+    );
+  }
 
   const handleCheckIn = (guestId) => {
     setAllGuests(prevGuests =>
@@ -109,12 +94,11 @@ const EventDashboard = () => {
       <div className="flex items-center space-x-3 flex-1 w-full sm:w-auto">
         <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-600 to-blue-600
           flex items-center justify-center flex-shrink-0">
-          <span className="text-sm font-bold text-white">{guest.name.charAt(0)}</span>
+          <span className="text-sm font-bold text-white">{guest.wallet.charAt(2)}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-semibold text-white truncate">{guest.name}</h4>
+          <h4 className="text-sm font-semibold text-white truncate">{guest.wallet}</h4>
           <div className="flex items-center space-x-2 text-xs text-gray-400">
-            <span className="font-mono truncate">{guest.wallet}</span>
             <span className={`px-2 py-0.5 rounded-full flex-shrink-0 ${
               guest.ticketType === 'VVIP' ? 'bg-yellow-500/20 text-yellow-400' :
               guest.ticketType === 'VIP' ? 'bg-blue-500/20 text-blue-400' :
@@ -189,15 +173,11 @@ const EventDashboard = () => {
                       <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>{eventData.date}</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="truncate max-w-[150px] sm:max-w-none">{eventData.venue}</span>
-                    </div>
                     <span className="px-2 sm:px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs">
                       {eventData.status}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-300">{eventData.description}</p>
+                  <p className="text-xs sm:text-sm text-gray-300">Event ID: {eventData.id}</p>
                 </div>
                 <button
                   onClick={() => navigate('/profile')}
@@ -243,7 +223,7 @@ const EventDashboard = () => {
                   <StatCard icon={Ticket} label="Total Tickets" value={eventData.totalTickets} />
                   <StatCard icon={TrendingUp} label="Sold Tickets" value={eventData.soldTickets} color="blue" />
                   <StatCard icon={CheckCircle} label="Checked In" value={checkedInGuests.length} color="green" />
-                  <StatCard icon={Eye} label="Revenue" value={eventData.revenue} color="yellow" />
+                  <StatCard icon={Eye} label="Attendance Rate" value={`${eventData.soldTickets > 0 ? Math.round((checkedInGuests.length / eventData.soldTickets) * 100) : 0}%`} color="yellow" />
                 </div>
 
                 <div className="bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30 p-4 sm:p-6">
@@ -289,12 +269,12 @@ const EventDashboard = () => {
                     <div className="space-y-2">
                       {['Regular', 'VIP', 'VVIP'].map((type) => {
                         const count = allGuests.filter(g => g.ticketType === type).length;
-                        return (
+                        return count > 0 ? (
                           <div key={type} className="flex justify-between items-center text-sm">
                             <span className="text-gray-400">{type}</span>
                             <span className="text-white font-semibold">{count}</span>
                           </div>
-                        );
+                        ) : null;
                       })}
                     </div>
                   </div>
@@ -373,31 +353,11 @@ const EventDashboard = () => {
                 <div className="bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30 p-6">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
                     <MessageSquare className="w-5 h-5 text-purple-400" />
-                    <span>Comments ({comments.length})</span>
+                    <span>Comments</span>
                   </h3>
-                  <div className="space-y-3">
-                    {comments.map((comment) => (
-                      <div
-                        key={comment.id}
-                        className="p-4 bg-black/40 backdrop-blur-xl rounded-lg border border-purple-500/30"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600
-                              flex items-center justify-center">
-                              <span className="text-xs font-bold text-white">
-                                {comment.user.charAt(0)}
-                              </span>
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-white">{comment.user}</p>
-                              <p className="text-xs text-gray-400">{comment.time}</p>
-                            </div>
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-300 ml-10">{comment.comment}</p>
-                      </div>
-                    ))}
+                  <div className="text-center py-12">
+                    <MessageSquare className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-400">Comments feature coming soon</p>
                   </div>
                 </div>
               </div>

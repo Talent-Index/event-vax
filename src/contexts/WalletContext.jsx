@@ -16,12 +16,44 @@ export const WalletProvider = ({ children }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [networkId, setNetworkId] = useState(null);
 
-  const EXPECTED_CHAIN_ID = 43114; // Avalanche Mainnet
+  const EXPECTED_CHAIN_ID = 43113; // Avalanche Fuji Testnet
+
+  const switchToAvalanche = async () => {
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0xA869' }], // 43113 in hex
+      });
+    } catch (switchError) {
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0xA869',
+              chainName: 'Avalanche Fuji C-Chain',
+              nativeCurrency: {
+                name: 'Avalanche',
+                symbol: 'AVAX',
+                decimals: 18
+              },
+              rpcUrls: ['https://api.avax-test.network/ext/bc/C/rpc'],
+              blockExplorerUrls: ['https://testnet.snowtrace.io/']
+            }]
+          });
+        } catch (addError) {
+          throw new Error('Failed to add Avalanche Fuji network');
+        }
+      } else {
+        throw switchError;
+      }
+    }
+  };
 
   // Check wallet connection on mount
   useEffect(() => {
     checkWalletConnection();
-    
+
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('chainChanged', handleChainChanged);
@@ -84,15 +116,15 @@ export const WalletProvider = ({ children }) => {
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
       });
-      
+
       if (accounts.length > 0) {
         const signer = await provider.getSigner();
         const address = await signer.getAddress();
         const network = await provider.getNetwork();
-        
+
         setWalletAddress(address);
         setNetworkId(Number(network.chainId));
-        
+
         return address;
       }
     } catch (error) {
@@ -109,11 +141,6 @@ export const WalletProvider = ({ children }) => {
   };
 
   const isConnected = !!walletAddress;
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('WalletContext state changed:', { walletAddress, isConnected, isConnecting, networkId });
-  }, [walletAddress, isConnected, isConnecting, networkId]);
 
   const value = {
     walletAddress,
@@ -121,6 +148,7 @@ export const WalletProvider = ({ children }) => {
     networkId,
     connectWallet,
     disconnectWallet,
+    switchToAvalanche,
     isConnected,
     EXPECTED_CHAIN_ID
   };
