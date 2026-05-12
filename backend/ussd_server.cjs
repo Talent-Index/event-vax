@@ -297,6 +297,17 @@ app.post('/daraja-callback', async (req, res) => {
   // Always respond 200 immediately to M-Pesa/IntaSend
   res.status(200).json({ status: 'received' });
 
+  // Log raw callback so we can see exactly what IntaSend sends
+  console.log('📩 CALLBACK RECEIVED:', JSON.stringify(req.body, null, 2));
+
+  // Verify the IntaSend challenge token
+  const expectedChallenge = process.env.INTASEND_CHALLENGE;
+  const receivedChallenge = req.body.challenge;
+  if (expectedChallenge && receivedChallenge !== expectedChallenge) {
+    console.warn(`⚠️ Challenge mismatch — received: "${receivedChallenge}", expected: "${expectedChallenge}". Ignoring callback.`);
+    return;
+  }
+
   try {
     const { success, pendingPayment, parsed } = processCallback(req.body);
 
