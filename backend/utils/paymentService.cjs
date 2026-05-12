@@ -91,13 +91,17 @@ function processCallback(rawBody) {
     if (rawBody.invoice) {
         // ── IntaSend callback ─────────────────────────────────────────────
         const inv = rawBody.invoice;
-        checkoutRequestId = inv.intasend_tracking_id;
+        // IntaSend may use any of these fields as the tracking ID
+        checkoutRequestId = rawBody.id                  // top-level transaction id
+            || inv.intasend_tracking_id                 // documented tracking field
+            || inv.invoice_id                           // invoice short-code
+            || inv.tracking_id;
         merchantRequestId = inv.invoice_id;
-        resultCode = inv.state === 'COMPLETE' ? 0 : 1;
-        resultDesc = inv.failed_reason || 'Success';
-        amount = Number(inv.value);
+        resultCode = (inv.state === 'COMPLETE' || inv.state === 'COMPLETE') ? 0 : 1;
+        resultDesc = inv.failed_reason || inv.state || 'Success';
+        amount = Number(inv.value || inv.net_amount);
         mpesaReceiptNumber = inv.mpesa_reference;
-        phoneNumber = inv.customer_phone_number;
+        phoneNumber = inv.account || rawBody.customer && rawBody.customer.phone_number;
         transactionDate = inv.updated_at;
         provider = 'intasend';
     } else if (rawBody.Body && rawBody.Body.stkCallback) {
