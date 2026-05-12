@@ -66,7 +66,7 @@ function getAdminSigner() {
 async function getTicketContractAddress(onChainEventId) {
     const provider = getProvider();
     const factory = new ethers.Contract(CONTRACTS.EVENT_FACTORY, EVENT_FACTORY_ABI, provider);
-    const ticketAddress = await factory.eventTicket(BigInt(onChainEventId));
+    const ticketAddress = await factory.eventTicket(BigInt(Math.trunc(Number(onChainEventId))));
     if (!ticketAddress || ticketAddress === ethers.ZeroAddress) {
         throw new Error(`No TicketNFT found for eventId ${onChainEventId}`);
     }
